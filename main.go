@@ -2,60 +2,28 @@ package main
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
 
-	//sess, err := session.NewSessionWithOptions(session.Options{
-	//	Config:            aws.Config{Region: aws.String("eu-central-1")},
-	//	SharedConfigState: session.SharedConfigEnable,
-	//})
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//ssmsvc := ssm.New(sess, aws.NewConfig().WithRegion("eu-central-1"))
-	//keyname := "/p-project/"
-	//withDecryption := true
-	//recursive := true
-	//
-	//// ssm.GetParametersByPath()
-	//
-	//output, err := ssmsvc.GetParametersByPath(&ssm.GetParametersByPathInput{
-	//	Path:           &keyname,
-	//	Recursive:      &recursive,
-	//	WithDecryption: &withDecryption,
-	//})
-	//
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//for _, p := range output.Parameters {
-	//	fmt.Printf("%s = %s\n", *p.Name, *p.Value)
-	//}
-
 	kubeconfig := filepath.Join(
-		homeDir(), ".kube", "np",
+		homeDir(), ".kube", "nonprod",
 	)
 
 	fmt.Println(kubeconfig)
-
-	//clientcmd.
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		panic(err)
 	}
 	clientset, err := kubernetes.NewForConfig(config)
-
 
 	if err != nil {
 		panic(err)
@@ -72,7 +40,6 @@ func main() {
 
 	}
 }
-
 
 func homeDir() string {
 	if runtime.GOOS == "windows" {
