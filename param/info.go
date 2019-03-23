@@ -8,13 +8,13 @@ import (
 
 type ParameterInfo struct {
 	Name         *ParameterName
-	Value        *ParameterValue
+	Value        ParameterValue
 	LastModified time.Time
 	Version      int64
 }
 
 func (pi *ParameterInfo) String() string {
-	return fmt.Sprintf("%s = %s", pi.Name, *pi.Value)
+	return fmt.Sprintf("%s = %s", pi.Name, pi.Value)
 }
 
 func mapParameterInfo(p *ssm.Parameter) (*ParameterInfo, error) {
@@ -23,15 +23,12 @@ func mapParameterInfo(p *ssm.Parameter) (*ParameterInfo, error) {
 		return nil, err
 	}
 
-	var value = NewParameterValue(*p.Value, mapSecret(*p.Type))
-
-	pi := &ParameterInfo{}
-	pi.Name = name
-	pi.Value = &value
-	pi.LastModified = *p.LastModifiedDate
-	pi.Version = *p.Version
-
-	return pi, nil
+	return &ParameterInfo{
+		Name:         name,
+		Value:        NewParameterValue(*p.Value, mapSecret(*p.Type)),
+		LastModified: *p.LastModifiedDate,
+		Version:      *p.Version,
+	}, nil
 }
 
 func mapSecret(typeString string) bool {

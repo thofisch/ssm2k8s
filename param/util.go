@@ -1,6 +1,8 @@
 package param
 
-import "regexp"
+import (
+	"regexp"
+)
 
 func findNamedGroups(regex *regexp.Regexp, input string) map[string]string {
 	groups := make(map[string]string)

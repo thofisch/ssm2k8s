@@ -7,6 +7,20 @@ import (
 	"time"
 )
 
+type Result struct {
+	Name    string
+	Secrets map[string]Secret
+	Configs map[string]Config
+}
+
+type Secret struct {
+	Data map[string]ParameterValue
+}
+
+type Config struct {
+	Data map[string]ParameterValue
+}
+
 func Test_aName(t *testing.T) {
 
 	stub := NewParameterStoreStub(
@@ -14,8 +28,22 @@ func Test_aName(t *testing.T) {
 			withName(aParameterName(
 				withApplication("foo"),
 				withKey("pghost"))),
-			withValue("lala"),
-			isSecret()),
+			withSecret("lala")),
+		aParameterInfo(
+			withName(aParameterName(
+				withApplication("foo"),
+				withKey("pguser"))),
+			withSecret("lala")),
+		aParameterInfo(
+			withName(aParameterName(
+				withApplication("foo"),
+				withKey("pgpassword"))),
+			withSecret("lala")),
+		aParameterInfo(
+			withName(aParameterName(
+				withApplication("foo"),
+				withKey("pgport"))),
+			withValue("1433")),
 		aParameterInfo(
 			withName(aParameterName(withKey("kafka-brokers"))),
 			withValue("broker1,broker2,broker3")),
@@ -23,29 +51,90 @@ func Test_aName(t *testing.T) {
 
 	parameters, _ := stub.GetParameters("/p-project/")
 
-	apps := make(map[string][]*ParameterInfo)
+	result := NewResult(parameters)
 
-	for _, p := range parameters {
-		list := apps[p.Name.Application]
-		if list == nil {
-			list = []*ParameterInfo{}
-		}
-
-		list = append(list, p)
-
-		apps[p.Name.Application] = list
-
-	}
-
-	for k, v := range apps {
-
-		fmt.Printf("Creating secret '%s' in namespace '%s' with the following values:\n", k, v[0].Name.Capability)
-
-		for _, p := range v {
-			fmt.Printf("  %s\n", p)
-		}
+	for k, v := range result.Secrets {
+		fmt.Printf("Creating secret '\x1b[33m%s\x1b[0m' in namespace '\x1b[33m%s\x1b[0m' with the following values:\n", k, result.Name)
+		alignKeyValue(v.Data)
 		fmt.Println()
 	}
+
+	for k, v := range result.Configs {
+		fmt.Printf("Creating config-map '\x1b[33m%s\x1b[0m' in namespace '\x1b[33m%s\x1b[0m' with the following values:\n", k, result.Name)
+		alignKeyValue(v.Data)
+		fmt.Println()
+	}
+}
+
+func alignKeyValue(m map[string]ParameterValue) {
+	var max = 0
+	for k := range m {
+		l := len(k)
+		if l > max {
+			max = l
+		}
+	}
+
+	format := fmt.Sprintf("  \x1b[33m%%-%ds\x1b[0m = \x1b[34m%%s\x1b[0m\n", max)
+
+	for k, v := range m {
+		fmt.Printf(format, k, v)
+	}
+}
+
+func NewResult(parameters []*ParameterInfo) Result {
+	result := Result{Name: parameters[0].Name.Capability}
+	result.Secrets = make(map[string]Secret)
+	result.Configs = make(map[string]Config)
+	secrets := fitlerSecrets(parameters, true)
+	configs := fitlerSecrets(parameters, false)
+	{
+		applications := applicationMap(secrets)
+		for a, pi := range applications {
+			keyValue := keyValueMap(pi)
+			result.Secrets[a] = Secret{Data: keyValue}
+		}
+	}
+	{
+		applications := applicationMap(configs)
+		for a, pi := range applications {
+			keyValue := keyValueMap(pi)
+			result.Configs[a] = Config{Data: keyValue}
+		}
+	}
+	return result
+}
+
+func applicationMap(pi []*ParameterInfo) map[string][]*ParameterInfo {
+	m := make(map[string][]*ParameterInfo)
+
+	for _, p := range pi {
+		m[p.Name.Application] = append(m[p.Name.Application], p)
+	}
+
+	return m
+}
+
+func keyValueMap(pi []*ParameterInfo) map[string]ParameterValue {
+	m := make(map[string]ParameterValue)
+
+	for _, p := range pi {
+		m[p.Name.Key] = p.Value
+	}
+
+	return m
+}
+
+func fitlerSecrets(pi []*ParameterInfo, b bool) []*ParameterInfo {
+	var a []*ParameterInfo
+
+	for _, p := range pi {
+		if p.Value.IsSecret() == b {
+			a = append(a, p)
+		}
+	}
+
+	return a
 }
 
 type ParameterStoreStub struct {
@@ -63,8 +152,7 @@ func (ps *ParameterStoreStub) GetParameters(path string) ([]*ParameterInfo, erro
 func aParameterInfo(builders ...func(*ParameterInfo)) *ParameterInfo {
 	pi := &ParameterInfo{
 		Name:         aParameterName(),
-		Secret:       No,
-		Value:        "",
+		Value:        NewParameterValue("", false),
 		Version:      0,
 		LastModified: time.Time{},
 	}
@@ -84,13 +172,13 @@ func withName(pn *ParameterName) func(*ParameterInfo) {
 
 func withValue(v string) func(*ParameterInfo) {
 	return func(p *ParameterInfo) {
-		p.Value = v
+		p.Value = NewParameterValue(v, false)
 	}
 }
 
-func isSecret() func(*ParameterInfo) {
-	return func(pi *ParameterInfo) {
-		pi.Secret = Yes
+func withSecret(v string) func(*ParameterInfo) {
+	return func(p *ParameterInfo) {
+		p.Value = NewParameterValue(v, true)
 	}
 }
 
