@@ -18,11 +18,11 @@ func Test_findNamedGroups_with_named_group(t *testing.T) {
 func Test_findNamedGroups_without_named_group(t *testing.T) {
 	groups := findNamedGroups(regexp.MustCompile("(.)"), "a")
 
-	assertEmpty(t, groups)
+	assertEqual(t, 0, len(groups))
 }
 
 func Test_findNamedGroups_without_match(t *testing.T) {
 	groups := findNamedGroups(regexp.MustCompile("(?P<group>[a-z])"), "1")
 
-	assertEmpty(t, groups)
+	assertEqual(t, 0, len(groups))
 }

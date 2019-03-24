@@ -1,30 +1,49 @@
 package param
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 )
 
-type ParameterStore interface {
-	GetParameters(path string) ([]*ParameterInfo, error)
-}
+type (
+	ParameterStore interface {
+		GetParameters(path string) ([]*Parameter, error)
+	}
 
-type awsSystemManagerParameterStore struct {
-	Region    string
-	Recursive bool
-	Decrypt   bool
-}
+	Parameter struct {
+		Name         *ParameterName
+		Value        ParameterValue
+		LastModified time.Time
+		Version      int64
+	}
+
+	ParameterName struct {
+		Capability  string
+		Environment string
+		Application string
+		Key         string
+	}
+
+	awsParameterStore struct {
+		Region    string
+		Recursive bool
+		Decrypt   bool
+	}
+)
 
 func NewParameterStore(region string) ParameterStore {
-	return &awsSystemManagerParameterStore{
+	return &awsParameterStore{
 		Region:    region,
 		Recursive: true,
 		Decrypt:   true,
 	}
 }
 
-func (ps *awsSystemManagerParameterStore) GetParameters(path string) ([]*ParameterInfo, error) {
+func (ps *awsParameterStore) GetParameters(path string) ([]*Parameter, error) {
 	parameters, err := ps.getParametersByPath(path)
 	if err != nil {
 		return nil, err
@@ -33,7 +52,7 @@ func (ps *awsSystemManagerParameterStore) GetParameters(path string) ([]*Paramet
 	return mapParameters(parameters)
 }
 
-func (ps *awsSystemManagerParameterStore) getParametersByPath(path string) ([]*ssm.Parameter, error) {
+func (ps *awsParameterStore) getParametersByPath(path string) ([]*ssm.Parameter, error) {
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config:            aws.Config{Region: aws.String(ps.Region)},
 		SharedConfigState: session.SharedConfigEnable,
@@ -56,17 +75,6 @@ func (ps *awsSystemManagerParameterStore) getParametersByPath(path string) ([]*s
 	return output.Parameters, nil
 }
 
-func mapParameters(parameters []*ssm.Parameter) ([]*ParameterInfo, error) {
-	len := len(parameters)
-	var parameterInfos = make([]*ParameterInfo, len)
-
-	for i, p := range parameters {
-		parameterInfo, err := mapParameterInfo(p)
-		if err != nil {
-			return nil, err
-		}
-		parameterInfos[i] = parameterInfo
-	}
-
-	return parameterInfos, nil
+func (pn *ParameterName) String() string {
+	return fmt.Sprintf("/%s/%s/%s/%s", pn.Capability, pn.Environment, pn.Application, pn.Key)
 }

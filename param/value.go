@@ -1,7 +1,5 @@
 package param
 
-const ParameterValueSecretString = "*****"
-
 type ParameterValue interface {
 	GetValue() string
 	IsSecret() bool
@@ -26,7 +24,7 @@ func (pv *parameterValue) IsSecret() bool {
 
 func (pv *parameterValue) String() string {
 	if pv.IsSecret() {
-		return ParameterValueSecretString
+		return "*****"
 	}
 	return pv.GetValue()
 }
