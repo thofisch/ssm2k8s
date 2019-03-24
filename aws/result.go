@@ -64,4 +64,3 @@ func fitlerSecrets(pi []*Parameter, b bool) []*Parameter {
 
 	return a
 }
-

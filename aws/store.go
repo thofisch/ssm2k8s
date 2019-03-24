@@ -131,3 +131,66 @@ func parseParameterName(name string) (*ParameterName, error) {
 func isSecret(typeString string) bool {
 	return ssm.ParameterTypeSecureString == typeString
 }
+
+/*****/
+
+type ParameterStore2 interface {
+	GetParameters(path string) ([]*Parameter2, error)
+}
+
+type Parameter2 struct {
+	Name         string
+	Value        string
+	Secret       bool
+	LastModified time.Time
+	Version      int64
+}
+
+type awsParameterStore2 struct {
+	Region    string
+	Recursive bool
+	Decrypt   bool
+}
+
+func NewParameterStore2(region string) ParameterStore2 {
+	return &awsParameterStore2{
+		Region:    region,
+		Recursive: true,
+		Decrypt:   true,
+	}
+}
+
+func (ps *awsParameterStore2) GetParameters(path string) ([]*Parameter2, error) {
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(ps.Region)},
+		SharedConfigState: session.SharedConfigEnable,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	client := ssm.New(sess, aws.NewConfig().WithRegion(ps.Region))
+
+	output, err := client.GetParametersByPath(&ssm.GetParametersByPathInput{
+		Path:           aws.String(path),
+		Recursive:      aws.Bool(ps.Recursive),
+		WithDecryption: aws.Bool(ps.Decrypt),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	parameters := make([]*Parameter2, len(output.Parameters))
+
+	for i, p := range output.Parameters {
+		parameters[i] = &Parameter2{
+			Name:         *p.Name,
+			Value:        *p.Value,
+			Secret:       isSecret(*p.Type),
+			LastModified: *p.LastModifiedDate,
+			Version:      *p.Version,
+		}
+	}
+
+	return parameters, nil
+}
