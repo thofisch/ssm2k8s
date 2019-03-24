@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
+	"time"
+
+	//corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"path/filepath"
 	"runtime"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
@@ -29,16 +31,48 @@ func main() {
 		panic(err)
 	}
 
-	secrets, err := clientset.CoreV1().Secrets("default").List(v1.ListOptions{})
+	secrets, err := clientset.CoreV1().Secrets("default").List(metav1.ListOptions{
+		LabelSelector: "secrets.io/foo=bar",
+	})
 	if err != nil {
 		panic(err)
 	}
 
 	for _, s := range secrets.Items {
 
-		fmt.Printf("%s\n", s.Name)
+		for k, v := range s.GetLabels() {
+			fmt.Printf("l: %s = %s\n", k, v)
+		}
+
+		for k, v := range s.GetAnnotations() {
+			fmt.Printf("a: %s = %s\n", k, v)
+		}
+		fmt.Println()
 
 	}
+
+	fmt.Println(time.Now().UTC().Format(time.RFC3339))
+
+	//secret := &corev1.Secret{
+	//	TypeMeta: metav1.TypeMeta{
+	//		Kind:       "Secret",
+	//		APIVersion: "v1",
+	//	},
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:        "new-secret",
+	//		Labels:      map[string]string{"secrets.io/foo": "bar"},
+	//		Annotations: map[string]string{"secrets.io/last-modified": time.Now().String()},
+	//	},
+	//	StringData: map[string]string{"key1": "foo", "key2": "bar"},
+	//	//Data: map[string][]byte{"Key": []byte("Value")},
+	//	Type: "Opaque",
+	//}
+	//
+	//_, err = clientset.CoreV1().Secrets("default").Create(secret)
+	//if err != nil {
+	//	panic(err)
+	//}
+
 }
 
 func homeDir() string {
