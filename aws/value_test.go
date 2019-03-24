@@ -1,8 +1,10 @@
-package param
+package aws_test
 
 import (
 	"fmt"
 	"testing"
+
+	. "github.com/thofisch/ssm2k8s/aws"
 )
 
 func TestParameterValue_GetValue(t *testing.T) {
@@ -17,7 +19,7 @@ func TestParameterValue_GetValue(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			pv := NewParameterValue("val", test.secret)
 
-			assertEqual(t, "val", pv.GetValue())
+			equals(t, "val", pv.GetValue())
 		})
 	}
 }
@@ -34,7 +36,7 @@ func TestParameterValue_IsSecret(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			pv := NewParameterValue("val", test.secret)
 
-			assertEqual(t, test.secret, pv.IsSecret())
+			equals(t, test.secret, pv.IsSecret())
 		})
 	}
 }
@@ -52,7 +54,7 @@ func TestParameterValue_String(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			pv := NewParameterValue("val", test.secret)
 
-			assertEqual(t, test.expected, fmt.Sprintf("%s", pv))
+			equals(t, test.expected, fmt.Sprintf("%s", pv))
 		})
 	}
 }

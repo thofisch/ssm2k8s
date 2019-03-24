@@ -1,4 +1,4 @@
-package param
+package aws
 
 type ParameterValueMap map[string]ParameterValue
 

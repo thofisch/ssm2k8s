@@ -1,9 +1,9 @@
-package param
+package aws
 
 //
 //import (
 //	"fmt"
-//	. "github.com/thofisch/ssm2k8s/param"
+//	. "github.com/thofisch/ssm2k8s/aws"
 //	"testing"
 //	"time"
 //)

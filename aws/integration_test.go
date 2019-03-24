@@ -1,17 +1,17 @@
 // +build integration
 
-package param_test
+package aws_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/thofisch/ssm2k8s/param"
+	"github.com/thofisch/ssm2k8s/aws"
 )
 
 func TestGetParameters(t *testing.T) {
-	stub := param.NewParameterStore(endpoints.EuCentral1RegionID)
+	stub := aws.NewParameterStore(endpoints.EuCentral1RegionID)
 
 	parameters, _ := stub.GetParameters("/p-project/")
 

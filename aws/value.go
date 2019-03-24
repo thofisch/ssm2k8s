@@ -1,4 +1,4 @@
-package param
+package aws
 
 type ParameterValue interface {
 	GetValue() string
