@@ -1,10 +1,10 @@
-package aws
+package util
 
 import (
 	"regexp"
 )
 
-func findNamedGroups(regex *regexp.Regexp, input string) map[string]string {
+func FindNamedGroups(regex *regexp.Regexp, input string) map[string]string {
 	groups := make(map[string]string)
 
 	match := regex.FindStringSubmatch(input)

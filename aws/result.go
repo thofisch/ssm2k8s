@@ -10,7 +10,7 @@ type Result struct {
 	Configs N
 }
 
-func NewResult(parameters []*Parameter) Result {
+func NewResult(parameters []*parameter) Result {
 	result := Result{Name: parameters[0].Name.Capability}
 	result.Secrets = make(N)
 	result.Configs = make(N)
@@ -33,8 +33,8 @@ func NewResult(parameters []*Parameter) Result {
 	return result
 }
 
-func applicationMap(pi []*Parameter) map[string][]*Parameter {
-	m := make(map[string][]*Parameter)
+func applicationMap(pi []*parameter) map[string][]*parameter {
+	m := make(map[string][]*parameter)
 
 	for _, p := range pi {
 		m[p.Name.Application] = append(m[p.Name.Application], p)
@@ -43,7 +43,7 @@ func applicationMap(pi []*Parameter) map[string][]*Parameter {
 	return m
 }
 
-func keyValueMap(pi []*Parameter) ParameterValueMap {
+func keyValueMap(pi []*parameter) ParameterValueMap {
 	m := make(ParameterValueMap)
 
 	for _, p := range pi {
@@ -53,8 +53,8 @@ func keyValueMap(pi []*Parameter) ParameterValueMap {
 	return m
 }
 
-func fitlerSecrets(pi []*Parameter, b bool) []*Parameter {
-	var a []*Parameter
+func fitlerSecrets(pi []*parameter, b bool) []*parameter {
+	var a []*parameter
 
 	for _, p := range pi {
 		if p.Value.IsSecret() == b {

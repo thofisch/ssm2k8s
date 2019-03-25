@@ -2,8 +2,8 @@ package aws
 
 import "time"
 
-func AParameter(builders ...func(*Parameter)) *Parameter {
-	var pi = &Parameter{
+func AParameter(builders ...func(*parameter)) *parameter {
+	var pi = &parameter{
 		Name:         AParameterName(),
 		Value:        NewParameterValue("", false),
 		Version:      0,
@@ -17,38 +17,38 @@ func AParameter(builders ...func(*Parameter)) *Parameter {
 	return pi
 }
 
-func WithName(pn *ParameterName) func(*Parameter) {
-	return func(p *Parameter) {
+func WithName(pn *parameterName) func(*parameter) {
+	return func(p *parameter) {
 		p.Name = pn
 	}
 }
 
-func WithValue(v string) func(*Parameter) {
-	return func(p *Parameter) {
+func WithValue(v string) func(*parameter) {
+	return func(p *parameter) {
 		p.Value = NewParameterValue(v, false)
 	}
 }
 
-func WithSecret(v string) func(*Parameter) {
-	return func(p *Parameter) {
+func WithSecret(v string) func(*parameter) {
+	return func(p *parameter) {
 		p.Value = NewParameterValue(v, true)
 	}
 }
 
-func WithLastModified(lastModified time.Time) func(*Parameter) {
-	return func(p *Parameter) {
+func WithLastModified(lastModified time.Time) func(*parameter) {
+	return func(p *parameter) {
 		p.LastModified = lastModified
 	}
 }
 
-func WithVersion(version int64) func(*Parameter) {
-	return func(p *Parameter) {
+func WithVersion(version int64) func(*parameter) {
+	return func(p *parameter) {
 		p.Version = version
 	}
 }
 
-func AParameterName(builders ...func(*ParameterName)) *ParameterName {
-	pn := &ParameterName{
+func AParameterName(builders ...func(*parameterName)) *parameterName {
+	pn := &parameterName{
 		Capability:  "cap",
 		Environment: "env",
 		Application: "app",
@@ -62,26 +62,26 @@ func AParameterName(builders ...func(*ParameterName)) *ParameterName {
 	return pn
 }
 
-func WithCapability(capability string) func(*ParameterName) {
-	return func(pn *ParameterName) {
+func WithCapability(capability string) func(*parameterName) {
+	return func(pn *parameterName) {
 		pn.Capability = capability
 	}
 }
 
-func WithEnvironment(environment string) func(*ParameterName) {
-	return func(pn *ParameterName) {
+func WithEnvironment(environment string) func(*parameterName) {
+	return func(pn *parameterName) {
 		pn.Environment = environment
 	}
 }
 
-func WithApplication(application string) func(*ParameterName) {
-	return func(pn *ParameterName) {
+func WithApplication(application string) func(*parameterName) {
+	return func(pn *parameterName) {
 		pn.Application = application
 	}
 }
 
-func WithKey(key string) func(*ParameterName) {
-	return func(pn *ParameterName) {
+func WithKey(key string) func(*parameterName) {
+	return func(pn *parameterName) {
 		pn.Key = key
 	}
 }

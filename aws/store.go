@@ -5,83 +5,58 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/thofisch/ssm2k8s/internal/util"
 )
 
 type (
 	ParameterStore interface {
-		GetParameters(path string) ([]*Parameter, error)
+		GetParameters(path string) ([]*parameter, error)
 	}
 
-	Parameter struct {
-		Name         *ParameterName
+	parameterStore struct {
+		Client SsmClient
+	}
+
+	parameter struct {
+		Name         *parameterName
 		Value        ParameterValue
 		LastModified time.Time
 		Version      int64
 	}
 
-	ParameterName struct {
+	parameterName struct {
 		Capability  string
 		Environment string
 		Application string
 		Key         string
 	}
-
-	awsParameterStore struct {
-		Region    string
-		Recursive bool
-		Decrypt   bool
-	}
 )
 
-func NewParameterStore(region string) ParameterStore {
-	return &awsParameterStore{
-		Region:    region,
-		Recursive: true,
-		Decrypt:   true,
-	}
+func NewParameterStore(region string) *parameterStore {
+	return NewParameterStoreWithClient(NewSsmClient(NewSsmConfig(region)))
 }
 
-func (ps *awsParameterStore) GetParameters(path string) ([]*Parameter, error) {
-	parameters, err := ps.getParametersByPath(path)
+func NewParameterStoreWithClient(client SsmClient) *parameterStore {
+	return &parameterStore{Client: client}
+}
+
+func (ps *parameterStore) GetParameters(path string) ([]*parameter, error) {
+	samParameters, err := ps.Client.GetParametersByPath(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return mapParameters(parameters)
-}
-
-func (ps *awsParameterStore) getParametersByPath(path string) ([]*ssm.Parameter, error) {
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String(ps.Region)},
-		SharedConfigState: session.SharedConfigEnable,
-	})
+	parameters, err := mapParameters(samParameters)
 	if err != nil {
 		return nil, err
 	}
 
-	client := ssm.New(sess, aws.NewConfig().WithRegion(ps.Region))
-
-	output, err := client.GetParametersByPath(&ssm.GetParametersByPathInput{
-		Path:           aws.String(path),
-		Recursive:      aws.Bool(ps.Recursive),
-		WithDecryption: aws.Bool(ps.Decrypt),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return output.Parameters, nil
+	return parameters, nil
 }
 
-func (pn *ParameterName) String() string {
-	return fmt.Sprintf("/%s/%s/%s/%s", pn.Capability, pn.Environment, pn.Application, pn.Key)
-}
-
-func mapParameters(ssmParameters []*ssm.Parameter) ([]*Parameter, error) {
-	var parameters = make([]*Parameter, len(ssmParameters))
+func mapParameters(ssmParameters []*ssm.Parameter) ([]*parameter, error) {
+	var parameters = make([]*parameter, len(ssmParameters))
 
 	for i, ssmParameter := range ssmParameters {
 		parameter, err := mapParameter(ssmParameter)
@@ -94,7 +69,7 @@ func mapParameters(ssmParameters []*ssm.Parameter) ([]*Parameter, error) {
 	return parameters, nil
 }
 
-func mapParameter(ssmParameter *ssm.Parameter) (*Parameter, error) {
+func mapParameter(ssmParameter *ssm.Parameter) (*parameter, error) {
 	parameterName, err := parseParameterName(*ssmParameter.Name)
 	if err != nil {
 		return nil, err
@@ -103,7 +78,7 @@ func mapParameter(ssmParameter *ssm.Parameter) (*Parameter, error) {
 	isSecret := isSecret(*ssmParameter.Type)
 	parameterValue := NewParameterValue(*ssmParameter.Value, isSecret)
 
-	return &Parameter{
+	return &parameter{
 		Name:         parameterName,
 		Value:        parameterValue,
 		LastModified: *ssmParameter.LastModifiedDate,
@@ -111,16 +86,20 @@ func mapParameter(ssmParameter *ssm.Parameter) (*Parameter, error) {
 	}, nil
 }
 
+func isSecret(typeString string) bool {
+	return ssm.ParameterTypeSecureString == typeString
+}
+
 var parameterNamePattern = regexp.MustCompile("^/(?P<cap>[^/]+)/(?P<env>[^/]+)/(?P<app>[^/]+)/(?P<key>[^/]+)$")
 
-func parseParameterName(name string) (*ParameterName, error) {
+func parseParameterName(name string) (*parameterName, error) {
 	if !parameterNamePattern.MatchString(name) {
 		return nil, fmt.Errorf("name '%s' is not of the expected format: /cap/env/app/key", name)
 	}
 
-	groups := findNamedGroups(parameterNamePattern, name)
+	groups := util.FindNamedGroups(parameterNamePattern, name)
 
-	return &ParameterName{
+	return &parameterName{
 		Capability:  groups["cap"],
 		Environment: groups["env"],
 		Application: groups["app"],
@@ -128,69 +107,6 @@ func parseParameterName(name string) (*ParameterName, error) {
 	}, nil
 }
 
-func isSecret(typeString string) bool {
-	return ssm.ParameterTypeSecureString == typeString
-}
-
-/*****/
-
-type ParameterStore2 interface {
-	GetParameters(path string) ([]*Parameter2, error)
-}
-
-type Parameter2 struct {
-	Name         string
-	Value        string
-	Secret       bool
-	LastModified time.Time
-	Version      int64
-}
-
-type awsParameterStore2 struct {
-	Region    string
-	Recursive bool
-	Decrypt   bool
-}
-
-func NewParameterStore2(region string) ParameterStore2 {
-	return &awsParameterStore2{
-		Region:    region,
-		Recursive: true,
-		Decrypt:   true,
-	}
-}
-
-func (ps *awsParameterStore2) GetParameters(path string) ([]*Parameter2, error) {
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String(ps.Region)},
-		SharedConfigState: session.SharedConfigEnable,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	client := ssm.New(sess, aws.NewConfig().WithRegion(ps.Region))
-
-	output, err := client.GetParametersByPath(&ssm.GetParametersByPathInput{
-		Path:           aws.String(path),
-		Recursive:      aws.Bool(ps.Recursive),
-		WithDecryption: aws.Bool(ps.Decrypt),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	parameters := make([]*Parameter2, len(output.Parameters))
-
-	for i, p := range output.Parameters {
-		parameters[i] = &Parameter2{
-			Name:         *p.Name,
-			Value:        *p.Value,
-			Secret:       isSecret(*p.Type),
-			LastModified: *p.LastModifiedDate,
-			Version:      *p.Version,
-		}
-	}
-
-	return parameters, nil
+func (pn *parameterName) String() string {
+	return fmt.Sprintf("/%s/%s/%s/%s", pn.Capability, pn.Environment, pn.Application, pn.Key)
 }

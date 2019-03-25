@@ -41,7 +41,7 @@ package aws
 //			withValue("broker1,broker2,broker3")),
 //	)
 //
-//	parameters, _ := stub.GetParameters("/p-project/")
+//	parameters, _ := stub.GetParametersByPath("/p-project/")
 //
 //	result := NewResult(parameters)
 //
@@ -75,14 +75,14 @@ package aws
 //}
 //
 //type ParameterStoreStub struct {
-//	parameterInfoList []*Parameter
+//	parameterInfoList []*parameter
 //}
 //
-//func NewParameterStoreStub(parameters ...*Parameter) awsParameterStore {
+//func NewParameterStoreStub(parameters ...*parameter) ssmClient {
 //	return &ParameterStoreStub{parameterInfoList: parameters}
 //}
 //
 
-//func (ps *ParameterStoreStub) GetParameters(path string) ([]*Parameter, error) {
+//func (ps *ParameterStoreStub) GetParametersByPath(path string) ([]*parameter, error) {
 //	return ps.parameterInfoList, nil
 //}
