@@ -33,11 +33,11 @@ type (
 	}
 )
 
-func NewParameterStore(region string) *parameterStore {
+func NewParameterStore(region string) ParameterStore {
 	return NewParameterStoreWithClient(NewSsmClient(NewSsmConfig(region)))
 }
 
-func NewParameterStoreWithClient(client SsmClient) *parameterStore {
+func NewParameterStoreWithClient(client SsmClient) ParameterStore {
 	return &parameterStore{Client: client}
 }
 
