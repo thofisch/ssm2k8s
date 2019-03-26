@@ -56,3 +56,24 @@ func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 
 	return output.Parameters, nil
 }
+
+func (c *ssmClient) PutParameter(name string, value string) error {
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config:            aws.Config{Region: aws.String(c.Config.Region)},
+		SharedConfigState: session.SharedConfigEnable,
+	})
+	if err != nil {
+		return err
+	}
+
+	client := ssm.New(sess, aws.NewConfig().WithRegion(c.Config.Region))
+
+	_, err = client.PutParameter(&ssm.PutParameterInput{
+		Name:      aws.String(name),
+		Value:     aws.String(value),
+		Overwrite: aws.Bool(true),
+		Type:      aws.String(ssm.ParameterTypeSecureString),
+	})
+
+	return err
+}

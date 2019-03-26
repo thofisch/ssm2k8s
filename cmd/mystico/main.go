@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	ssm2k8s.GenerateSecretManifests()
+	ssm2k8s.CreateParameters()
 }
