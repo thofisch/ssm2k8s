@@ -1,4 +1,4 @@
-package aws
+package ssm2k8s
 
 //
 //import (
@@ -75,14 +75,14 @@ package aws
 //}
 //
 //type ParameterStoreStub struct {
-//	parameterInfoList []*parameter
+//	parameterInfoList []*Parameter
 //}
 //
-//func NewParameterStoreStub(parameters ...*parameter) ssmClient {
+//func NewParameterStoreStub(parameters ...*Parameter) ssmClient {
 //	return &ParameterStoreStub{parameterInfoList: parameters}
 //}
 //
 
-//func (ps *ParameterStoreStub) GetParametersByPath(path string) ([]*parameter, error) {
+//func (ps *ParameterStoreStub) GetParametersByPath(path string) ([]*Parameter, error) {
 //	return ps.parameterInfoList, nil
 //}

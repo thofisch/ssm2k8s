@@ -10,8 +10,8 @@ type parameterValue struct {
 	secret bool
 }
 
-func NewParameterValue(value string, secret bool) ParameterValue {
-	return &parameterValue{value: value, secret: secret}
+func NewParameterValue(v string, s bool) ParameterValue {
+	return &parameterValue{value: v, secret: s}
 }
 
 func (pv *parameterValue) GetValue() string {

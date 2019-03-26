@@ -1,35 +1,25 @@
 package aws
 
 import (
-	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/thofisch/ssm2k8s/internal/util"
 )
 
 type (
 	ParameterStore interface {
-		GetParameters(path string) ([]*parameter, error)
+		GetParameters(path string) ([]*Parameter, error)
 	}
 
 	parameterStore struct {
 		Client SsmClient
 	}
 
-	parameter struct {
-		Name         *parameterName
+	Parameter struct {
+		Name         string
 		Value        ParameterValue
 		LastModified time.Time
 		Version      int64
-	}
-
-	parameterName struct {
-		Capability  string
-		Environment string
-		Application string
-		Key         string
 	}
 )
 
@@ -41,72 +31,39 @@ func NewParameterStoreWithClient(client SsmClient) ParameterStore {
 	return &parameterStore{Client: client}
 }
 
-func (ps *parameterStore) GetParameters(path string) ([]*parameter, error) {
+func (ps *parameterStore) GetParameters(path string) ([]*Parameter, error) {
 	samParameters, err := ps.Client.GetParametersByPath(path)
 	if err != nil {
 		return nil, err
 	}
 
-	parameters, err := mapParameters(samParameters)
-	if err != nil {
-		return nil, err
-	}
+	parameters := mapParameters(samParameters)
 
 	return parameters, nil
 }
 
-func mapParameters(ssmParameters []*ssm.Parameter) ([]*parameter, error) {
-	var parameters = make([]*parameter, len(ssmParameters))
+func mapParameters(ssmParameters []*ssm.Parameter) []*Parameter {
+	var parameters = make([]*Parameter, len(ssmParameters))
 
 	for i, ssmParameter := range ssmParameters {
-		parameter, err := mapParameter(ssmParameter)
-		if err != nil {
-			return nil, err
-		}
-		parameters[i] = parameter
+		parameters[i] = mapParameter(ssmParameter)
 	}
 
-	return parameters, nil
+	return parameters
 }
 
-func mapParameter(ssmParameter *ssm.Parameter) (*parameter, error) {
-	parameterName, err := parseParameterName(*ssmParameter.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	isSecret := isSecret(*ssmParameter.Type)
+func mapParameter(ssmParameter *ssm.Parameter) *Parameter {
+	isSecret := isSecret(ssmParameter.Type)
 	parameterValue := NewParameterValue(*ssmParameter.Value, isSecret)
 
-	return &parameter{
-		Name:         parameterName,
+	return &Parameter{
+		Name:         *ssmParameter.Name,
 		Value:        parameterValue,
 		LastModified: *ssmParameter.LastModifiedDate,
 		Version:      *ssmParameter.Version,
-	}, nil
-}
-
-func isSecret(typeString string) bool {
-	return ssm.ParameterTypeSecureString == typeString
-}
-
-var parameterNamePattern = regexp.MustCompile("^/(?P<cap>[^/]+)/(?P<env>[^/]+)/(?P<app>[^/]+)/(?P<key>[^/]+)$")
-
-func parseParameterName(name string) (*parameterName, error) {
-	if !parameterNamePattern.MatchString(name) {
-		return nil, fmt.Errorf("name '%s' is not of the expected format: /cap/env/app/key", name)
 	}
-
-	groups := util.FindNamedGroups(parameterNamePattern, name)
-
-	return &parameterName{
-		Capability:  groups["cap"],
-		Environment: groups["env"],
-		Application: groups["app"],
-		Key:         groups["key"],
-	}, nil
 }
 
-func (pn *parameterName) String() string {
-	return fmt.Sprintf("/%s/%s/%s/%s", pn.Capability, pn.Environment, pn.Application, pn.Key)
+func isSecret(typeString *string) bool {
+	return ssm.ParameterTypeSecureString == *typeString
 }

@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/thofisch/ssm2k8s"
-	"github.com/thofisch/ssm2k8s/k8s"
+	"github.com/thofisch/ssm2k8s/aws"
 )
 
 func main() {
 
-	ssm2k8s.UpdateSecrets()
+	//ssm2k8s.UpdateSecrets()
 
-	k8s.GetSecrets()
+	aws.GetAccountId()
+
+	//k8s.GetSecrets()
 
 }
 
