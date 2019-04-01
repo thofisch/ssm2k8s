@@ -2,14 +2,37 @@ package k8s
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/kubernetes/scheme"
 	"os"
 	"path/filepath"
 	"runtime"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
+
+func PrintSecret() {
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "new-secret",
+		},
+		Data: map[string][]byte{"Key": []byte("Value")},
+		Type: "Opaque",
+	}
+
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	s.Encode(secret, os.Stdout)
+
+}
 
 func GetSecrets() {
 	kubeconfig := filepath.Join(
@@ -24,7 +47,7 @@ func GetSecrets() {
 	if err != nil {
 		panic(err)
 	}
-	secrets, err := clientset.CoreV1().Secrets("default").List(v1.ListOptions{
+	secrets, err := clientset.CoreV1().Secrets("default").List(metav1.ListOptions{
 		LabelSelector: "secrets.io/foo=bar",
 	})
 	if err != nil {
