@@ -62,3 +62,33 @@ func NewLogger(serviceName string, version string) (logger log.Logger) {
 	stdlog.SetOutput(log.NewStdlibAdapter(logger))
 	return
 }
+
+
+//func CreateParameters() {
+//	accountId, err := GetAccountId()
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	path := "/p-project/"
+//	fmt.Printf("Creating AWS SystemManager Parameters in \033[33m%s\033[0m from account \033[33m%s\033[0m \n", path, accountId)
+//
+//	newParameters := []struct {
+//		environment string
+//		application string
+//		key         string
+//		value       string
+//		secret      bool
+//	}{
+//		{"prod", "default", "kafka_bootstrap_servers", "pkc-l9pve.eu-west-1.aws.confluent.cloud:9092", true},
+//		{"prod", "default", "kafka_sasl_username", "2QIFZBFI32KT4I5Q", true},
+//		{"prod", "default", "kafka_sasl_password", "1gOjGYMZrDqHQe3mlYpytZP5ScnQGWkJnwUimIX8KkCK+4GHfDOOl+DnBjOMrFre", true},
+//	}
+//
+//	for _, v := range newParameters {
+//		name := parameterName{"p-project", v.environment, v.application, v.key}
+//
+//		fmt.Printf("%s\n", &name)
+//	}
+//
+//}

@@ -6,7 +6,7 @@ import (
 )
 
 func GetAccountId() (string, error) {
-	client := sts.New(session.New())
+	client := sts.New(session.Must(session.NewSession()))
 	result, err := client.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 	if err != nil {
 		return "", err

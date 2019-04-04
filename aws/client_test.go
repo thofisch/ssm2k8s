@@ -3,19 +3,15 @@
 package aws_test
 
 import (
-	"fmt"
-	"testing"
-	"time"
-
 	"github.com/thofisch/ssm2k8s/aws"
+	"github.com/thofisch/ssm2k8s/domain"
+	"testing"
 )
 
 func TestGetParameters(t *testing.T) {
-	stub := aws.NewParameterStore("eu-central-1")
+	stub,_ := aws.NewParameterStore("eu-central-1")
 
-	parameters, _ := stub.GetParameters("/p-project/")
+	secrets, _ := stub.GetApplicationSecrets("p-project")
 
-	for _, p := range parameters {
-		fmt.Printf("%s %s\n", p.LastModified.Format(time.RFC3339), p.LastModified.Local().Format(time.RFC3339))
-	}
+	domain.PrintApplicationSecrets(secrets, "test")
 }

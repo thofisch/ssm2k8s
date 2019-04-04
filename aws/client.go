@@ -10,15 +10,14 @@ type (
 	SsmClient interface {
 		GetParametersByPath(path string) ([]*ssm.Parameter, error)
 	}
-
 	SsmConfig struct {
 		Region    string
 		Recursive bool
 		Decrypt   bool
 	}
-
 	ssmClient struct {
 		Config *SsmConfig
+		ssm    *ssm.SSM
 	}
 )
 
@@ -30,22 +29,24 @@ func NewSsmConfig(region string) *SsmConfig {
 	}
 }
 
-func NewSsmClient(config *SsmConfig) SsmClient {
-	return &ssmClient{Config: config}
-}
-
-func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String(c.Config.Region)},
-		SharedConfigState: session.SharedConfigEnable,
-	})
+func NewSsmClient(config *SsmConfig) (SsmClient, error) {
+	session, err := session.NewSession(&aws.Config{
+		Region: aws.String(config.Region)},
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	client := ssm.New(sess, aws.NewConfig().WithRegion(c.Config.Region))
+	ssm := ssm.New(session)
 
-	output, err := client.GetParametersByPath(&ssm.GetParametersByPathInput{
+	return &ssmClient{
+		Config: config,
+		ssm:    ssm,
+	}, nil
+}
+
+func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
+	output, err := c.ssm.GetParametersByPath(&ssm.GetParametersByPathInput{
 		Path:           aws.String(path),
 		Recursive:      aws.Bool(c.Config.Recursive),
 		WithDecryption: aws.Bool(c.Config.Decrypt),
@@ -58,17 +59,7 @@ func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 }
 
 func (c *ssmClient) PutParameter(name string, value string) error {
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config:            aws.Config{Region: aws.String(c.Config.Region)},
-		SharedConfigState: session.SharedConfigEnable,
-	})
-	if err != nil {
-		return err
-	}
-
-	client := ssm.New(sess, aws.NewConfig().WithRegion(c.Config.Region))
-
-	_, err = client.PutParameter(&ssm.PutParameterInput{
+	_, err := c.ssm.PutParameter(&ssm.PutParameterInput{
 		Name:      aws.String(name),
 		Value:     aws.String(value),
 		Overwrite: aws.Bool(true),
