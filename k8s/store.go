@@ -1,6 +1,10 @@
 package k8s
 
 import (
+	"github.com/thofisch/ssm2k8s/internal/logging"
+	"io"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 	"time"
 
 	"github.com/thofisch/ssm2k8s/domain"
@@ -24,12 +28,13 @@ type (
 		DeleteApplicationSecret(secretName string) error
 	}
 	secretStore struct {
+		Log    logging.Logger
 		Client Client
 	}
 )
 
-func NewSecretStore(namespace string) (SecretStore, error) {
-	client, err := NewClient(Config{
+func NewSecretStore(logger logging.Logger, namespace string) (SecretStore, error) {
+	client, err := NewClient(logger, Config{
 		Namespace:     namespace,
 		LabelSelector: LabelVersion,
 	})
@@ -37,11 +42,14 @@ func NewSecretStore(namespace string) (SecretStore, error) {
 		return nil, err
 	}
 
-	return NewSecretStoreWithClient(client), nil
+	return NewSecretStoreWithClient(logger, client), nil
 }
 
-func NewSecretStoreWithClient(client Client) SecretStore {
-	return &secretStore{Client: client}
+func NewSecretStoreWithClient(logger logging.Logger, client Client) SecretStore {
+	return &secretStore{
+		Log:    logger,
+		Client: client,
+	}
 }
 
 func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error) {
@@ -81,6 +89,10 @@ func getKeyValueMap(bytes map[string][]byte) map[string]string {
 func (ss *secretStore) CreateApplicationSecret(secret domain.ApplicationSecret, secretName string) error {
 	s := ss.createSecret(secret, secretName)
 
+	//return nil
+
+	//return printSecret(s, os.Stderr)
+
 	return ss.Client.CreateSecret(s)
 }
 
@@ -105,8 +117,20 @@ func (ss *secretStore) createSecret(secret domain.ApplicationSecret, secretName 
 	return s
 }
 
+func printSecret(secret *coreV1.Secret, w io.Writer) error {
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	s.Encode(secret, w)
+
+	return nil
+}
+
 func (ss *secretStore) UpdateApplicationSecret(secret domain.ApplicationSecret, secretName string) error {
 	s := ss.createSecret(secret, secretName)
+
+	//return nil
+
+	//return printSecret(s, os.Stderr)
 
 	return ss.Client.UpdateSecret(s)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/thofisch/ssm2k8s/internal/logging"
 )
 
 type (
@@ -16,6 +17,7 @@ type (
 		Decrypt   bool
 	}
 	ssmClient struct {
+		Log    logging.Logger
 		Config *SsmConfig
 		ssm    *ssm.SSM
 	}
@@ -29,7 +31,7 @@ func NewSsmConfig(region string) *SsmConfig {
 	}
 }
 
-func NewSsmClient(config *SsmConfig) (SsmClient, error) {
+func NewSsmClient(logger logging.Logger, config *SsmConfig) (SsmClient, error) {
 	session, err := session.NewSession(&aws.Config{
 		Region: aws.String(config.Region)},
 	)
@@ -40,22 +42,57 @@ func NewSsmClient(config *SsmConfig) (SsmClient, error) {
 	ssm := ssm.New(session)
 
 	return &ssmClient{
+		Log:    logger,
 		Config: config,
 		ssm:    ssm,
 	}, nil
 }
 
 func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
-	output, err := c.ssm.GetParametersByPath(&ssm.GetParametersByPathInput{
-		Path:           aws.String(path),
-		Recursive:      aws.Bool(c.Config.Recursive),
-		WithDecryption: aws.Bool(c.Config.Decrypt),
-	})
-	if err != nil {
-		return nil, err
+
+	var nextToken *string = nil
+	var parameters []*ssm.Parameter
+
+	//log.NewContextLogger(logrus.Fields{
+	//	"path":      path,
+	//	"recursive": c.Config.Recursive,
+	//	"decrypt":   c.Config.Decrypt,
+	//	"region":    c.Config.Region,
+	//})
+
+	for {
+		c.Log.Printf("aws ssm get-parameters-by-path --path %s --recursive %t --with-decryption %t\n",
+			path, c.Config.Recursive, c.Config.Decrypt)
+
+		output, err := c.ssm.GetParametersByPath(&ssm.GetParametersByPathInput{
+			Path:           aws.String(path),
+			Recursive:      aws.Bool(c.Config.Recursive),
+			WithDecryption: aws.Bool(c.Config.Decrypt),
+			//MaxResults:     aws.Int64(2),
+			NextToken: nextToken,
+		})
+		if err != nil {
+			c.Log.Errorf("ERROR: %s\n", err)
+			return nil, err
+		}
+
+		c.Log.Debugf("Found %d parameters\n", len(output.Parameters))
+
+		for _, p := range output.Parameters {
+			parameters = append(parameters, p)
+		}
+
+		nextToken = output.NextToken
+
+		if nextToken == nil {
+			break
+		}
+
+		c.Log.Debugf("Found NextToken: %s \n", *output.NextToken)
+		continue
 	}
 
-	return output.Parameters, nil
+	return parameters, nil
 }
 
 func (c *ssmClient) PutParameter(name string, value string) error {

@@ -77,6 +77,7 @@ func (s *syncImpl) SyncSecrets() {
 
 			if secret.Hash == k8sSecret.Hash {
 				fmt.Printf("\033[32mOK\033[0m\n")
+				continue
 			} else {
 				fmt.Printf("\033[34mWARN\033[0m\n")
 			}
@@ -90,7 +91,7 @@ func (s *syncImpl) SyncSecrets() {
 		}
 	}
 
-	for secretName, _ := range k8sSecrets {
+	for secretName := range k8sSecrets {
 		_, ok := secrets[secretName]
 
 		if !ok {

@@ -3,6 +3,7 @@ package k8s
 import (
 	"os"
 
+	"github.com/thofisch/ssm2k8s/internal/logging"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -18,6 +19,7 @@ type Client interface {
 }
 
 type client struct {
+	Log       logging.Logger
 	Config    Config
 	Clientset *kubernetes.Clientset
 }
@@ -29,7 +31,7 @@ type Config struct {
 	LabelSelector  string
 }
 
-func NewClient(c Config) (Client, error) {
+func NewClient(logger logging.Logger, c Config) (Client, error) {
 
 	config, err := getConfig(c)
 	if err != nil {
@@ -42,6 +44,7 @@ func NewClient(c Config) (Client, error) {
 	}
 
 	return &client{
+		Log:       logger,
 		Config:    c,
 		Clientset: clientset,
 	}, nil
@@ -96,22 +99,3 @@ func (c *client) UpdateSecret(secret *coreV1.Secret) error {
 func (c *client) DeleteSecret(name string) error {
 	return c.Clientset.CoreV1().Secrets(c.Config.Namespace).Delete(name, &metaV1.DeleteOptions{})
 }
-
-//func PrintSecret() {
-//	secret := &coreV1.Secret{
-//		TypeMeta: metaV1.TypeMeta{
-//			Kind:       "Secret",
-//			APIVersion: "v1",
-//		},
-//		ObjectMeta: metaV1.ObjectMeta{
-//			Name: "new-secret",
-//		},
-//		Data: map[string][]byte{"Key": []byte("Value")},
-//		Type: "Opaque",
-//	}
-//
-//	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-//
-//	s.Encode(secret, os.Stdout)
-//
-//}

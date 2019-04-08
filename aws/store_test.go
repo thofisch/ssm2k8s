@@ -1,18 +1,20 @@
 package aws
 
 import (
+	"github.com/thofisch/ssm2k8s/internal/logging"
+	"testing"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/thofisch/ssm2k8s/domain"
 	"github.com/thofisch/ssm2k8s/internal/assert"
 	"github.com/thofisch/ssm2k8s/internal/util"
-	"testing"
-	"time"
 )
 
 func TestParameterStore_GetApplicationSecrets(t *testing.T) {
 	then := time.Now().UTC()
-	sut := NewParameterStoreWithClient(NewSsmClientStub(
+	sut := NewParameterStoreWithClient(logging.NewNullLogger(), NewSsmClientStub(
 		&ssm.Parameter{
 			Name:             aws.String("/cap/env/app/key1"),
 			Value:            aws.String("secret"),
@@ -33,7 +35,7 @@ func TestParameterStore_GetApplicationSecrets(t *testing.T) {
 
 	assert.Ok(t, err)
 	assert.Equal(t, domain.ApplicationSecrets{
-		"app": domain.ApplicationSecret{
+		"env-app-secret": domain.ApplicationSecret{
 			LastModified: then,
 			Hash:         util.HashKeyValuePairs(map[string]string{"key1": "secret", "key2": "value"}),
 			Data:         map[string]string{"key1": "secret", "key2": "value"},
@@ -52,7 +54,6 @@ func NewSsmClientStub(parameters ...*ssm.Parameter) *SsmClientStub {
 func (stub *SsmClientStub) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 	return stub.Parameters, nil
 }
-
 
 func Test_parseParameterName_invalid_name(t *testing.T) {
 	tests := []struct {
@@ -91,4 +92,15 @@ func Test_parseParameterName_valid_name(t *testing.T) {
 	assert.Equal(t, "b", pn.Environment)
 	assert.Equal(t, "c", pn.Application)
 	assert.Equal(t, "d", pn.Key)
+}
+
+func Test_getSecretName(t *testing.T) {
+	parameterName := parameterName{
+		Capability:  "a",
+		Environment: "b",
+		Application: "c",
+		Key:         "d",
+	}
+
+	assert.Equal(t, "b-c-secret", getSecretName(parameterName))
 }

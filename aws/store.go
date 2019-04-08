@@ -2,13 +2,14 @@ package aws
 
 import (
 	"fmt"
-	"github.com/thofisch/ssm2k8s/domain"
-	"github.com/thofisch/ssm2k8s/internal/util"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/thofisch/ssm2k8s/domain"
+	"github.com/thofisch/ssm2k8s/internal/logging"
+	"github.com/thofisch/ssm2k8s/internal/util"
 )
 
 type (
@@ -16,6 +17,7 @@ type (
 		GetApplicationSecrets(capability string) (secrets domain.ApplicationSecrets, err error)
 	}
 	parameterStore struct {
+		Log    logging.Logger
 		Client SsmClient
 	}
 	parameter struct {
@@ -32,16 +34,19 @@ type (
 	}
 )
 
-func NewParameterStore(region string) (ParameterStore, error) {
-	client, err := NewSsmClient(NewSsmConfig(region))
+func NewParameterStore(logger logging.Logger, region string) (ParameterStore, error) {
+	client, err := NewSsmClient(logger, NewSsmConfig(region))
 	if err != nil {
 		return nil, err
 	}
-	return NewParameterStoreWithClient(client), nil
+	return NewParameterStoreWithClient(logger, client), nil
 }
 
-func NewParameterStoreWithClient(client SsmClient) ParameterStore {
-	return &parameterStore{Client: client}
+func NewParameterStoreWithClient(logger logging.Logger, client SsmClient) ParameterStore {
+	return &parameterStore{
+		Log:    logger,
+		Client: client,
+	}
 }
 
 func (ps *parameterStore) GetApplicationSecrets(capability string) (secrets domain.ApplicationSecrets, err error) {
@@ -135,10 +140,15 @@ func mapApplications(parameters []parameter) map[string][]parameter {
 	m := make(map[string][]parameter)
 
 	for _, p := range parameters {
-		m[p.Name.Application] = append(m[p.Name.Application], p)
+		secretName := getSecretName(p.Name)
+		m[secretName] = append(m[secretName], p)
 	}
 
 	return m
+}
+
+func getSecretName(pn parameterName) string {
+	return fmt.Sprintf("%s-%s-secret", pn.Environment, pn.Application)
 }
 
 func mapData(parameters []parameter) domain.SecretData {
