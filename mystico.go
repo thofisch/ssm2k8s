@@ -32,7 +32,7 @@ func NewSync(config Config, secretStore k8s.SecretStore, parameterStore aws.Para
 		secretStore:    secretStore,
 		parameterStore: parameterStore,
 		accountId:      config.AccountId,
-		namespace:      "default", //config.Namespace,
+		namespace:      config.Namespace,
 		region:         config.Region,
 		path:           "/" + config.Namespace,
 	}

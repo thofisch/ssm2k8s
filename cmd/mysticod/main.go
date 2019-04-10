@@ -15,6 +15,7 @@ import (
 
 const (
 	DefaultPollTimeout         = 30 * time.Second
+	KubernetesNamespaceEnvName = "KUBERNETES_NAMESPACE"
 )
 
 func main() {
@@ -69,7 +70,12 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 	}
 
 	// TODO -- get namespace from configuration
-	namespace := "p-project"
+
+	namespace, ok := os.LookupEnv(KubernetesNamespaceEnvName)
+	if !ok {
+		panic(fmt.Sprintf("Expected environment variable %q to containing namespace information", KubernetesNamespaceEnvName))
+	}
+
 	region := "eu-central-1"
 	path := "/" + namespace
 
@@ -84,7 +90,7 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 		Region:    region,
 	}
 
-	secretStore, err := k8s.NewSecretStore(log, "default")
+	secretStore, err := k8s.NewSecretStore(log, namespace)
 	if err != nil {
 		return nil, err
 	}
