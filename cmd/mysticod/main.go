@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	DefaultPollTimeout = 2 * time.Second
+	DefaultPollTimeout         = 30 * time.Second
 )
 
 func main() {
 	logger := logging.NewLogger()
+
 
 	m, err := NewMain(logger)
 	if err != nil {
