@@ -45,6 +45,3 @@ func (secrets ApplicationSecrets) String() string {
 	return sb.String()
 }
 
-func PrintApplicationSecrets(secrets ApplicationSecrets, location string) {
-	fmt.Print(secrets.String())
-}

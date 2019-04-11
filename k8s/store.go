@@ -28,7 +28,6 @@ type (
 		DeleteApplicationSecret(secretName string) error
 	}
 	secretStore struct {
-		Log    logging.Logger
 		Client Client
 	}
 )
@@ -42,12 +41,11 @@ func NewSecretStore(logger logging.Logger, namespace string) (SecretStore, error
 		return nil, err
 	}
 
-	return NewSecretStoreWithClient(logger, client), nil
+	return NewSecretStoreWithClient(client), nil
 }
 
-func NewSecretStoreWithClient(logger logging.Logger, client Client) SecretStore {
+func NewSecretStoreWithClient(client Client) SecretStore {
 	return &secretStore{
-		Log:    logger,
 		Client: client,
 	}
 }

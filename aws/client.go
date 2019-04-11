@@ -61,15 +61,14 @@ func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 	//})
 
 	for {
-		c.Log.Printf("aws ssm get-parameters-by-path --path %s --recursive %t --with-decryption %t\n",
-			path, c.Config.Recursive, c.Config.Decrypt)
+		c.Log.Debugf("aws ssm get-parameters-by-path(path=%q, recursive=%t, withDecryption=%t, nextToken=%s\n",
+			path, c.Config.Recursive, c.Config.Decrypt, nextToken)
 
 		output, err := c.ssm.GetParametersByPath(&ssm.GetParametersByPathInput{
 			Path:           aws.String(path),
 			Recursive:      aws.Bool(c.Config.Recursive),
 			WithDecryption: aws.Bool(c.Config.Decrypt),
-			//MaxResults:     aws.Int64(2),
-			NextToken: nextToken,
+			NextToken:      nextToken,
 		})
 		if err != nil {
 			c.Log.Errorf("ERROR: %s\n", err)
@@ -87,8 +86,6 @@ func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 		if nextToken == nil {
 			break
 		}
-
-		c.Log.Debugf("Found NextToken: %s \n", *output.NextToken)
 		continue
 	}
 

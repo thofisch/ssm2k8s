@@ -73,6 +73,7 @@ func (c *client) GetSecrets() ([]coreV1.Secret, error) {
 		LabelSelector: c.Config.LabelSelector,
 	})
 	if err != nil {
+		c.Log.Errorf("ERROR: %s", err)
 		return nil, err
 	}
 
@@ -88,6 +89,9 @@ func (c *client) GetSecrets() ([]coreV1.Secret, error) {
 func (c *client) CreateSecret(secret *coreV1.Secret) error {
 	c.Log.Debugf("Creating secret &q in namespace %q", secret.Name, c.Config.Namespace)
 	_, err := c.Clientset.CoreV1().Secrets(c.Config.Namespace).Create(secret)
+	if err != nil {
+		c.Log.Errorf("ERROR: %s", err)
+	}
 
 	return err
 }
@@ -95,11 +99,19 @@ func (c *client) CreateSecret(secret *coreV1.Secret) error {
 func (c *client) UpdateSecret(secret *coreV1.Secret) error {
 	c.Log.Debugf("Updating secret &q in namespace %q", secret.Name, c.Config.Namespace)
 	_, err := c.Clientset.CoreV1().Secrets(c.Config.Namespace).Update(secret)
+	if err != nil {
+		c.Log.Errorf("ERROR: %s", err)
+	}
 
 	return err
 }
 
 func (c *client) DeleteSecret(name string) error {
 	c.Log.Debugf("Deleting secret &q in namespace %n", name, c.Config.Namespace)
-	return c.Clientset.CoreV1().Secrets(c.Config.Namespace).Delete(name, &metaV1.DeleteOptions{})
+	err := c.Clientset.CoreV1().Secrets(c.Config.Namespace).Delete(name, &metaV1.DeleteOptions{})
+	if err != nil {
+		c.Log.Errorf("ERROR: %s", err)
+	}
+
+	return err
 }

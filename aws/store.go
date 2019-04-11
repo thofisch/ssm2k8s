@@ -51,22 +51,19 @@ func NewParameterStoreWithClient(logger logging.Logger, client SsmClient) Parame
 
 func (ps *parameterStore) GetApplicationSecrets(capability string) (secrets domain.ApplicationSecrets, err error) {
 	path := ensurePathPrefix(capability)
+
+	ps.Log.Infof("Getting AWS SSM Parameters from Namespace %q", path)
 	ssmParameters, err := ps.Client.GetParametersByPath(path)
 	if err != nil {
+		ps.Log.Errorf("[ERROR] %s\n", err)
 		return nil, err
 	}
 
-	//awsParameters := mapParameters(ssmParameters)
+	ps.Log.Debugf("Found %d parameters", len(ssmParameters))
 
-	//parameterCount := len(awsParameters)
-	//if parameterCount == 0 {
-	//	fmt.Printf(" No awsParameters found.")
-	//	var parameters []*parameter = make([]*parameter, 0)
-	//	return getApplicationSecrets(parameters), nil
-	//}
-	//fmt.Printf(" Found %d awsParameters.\n\n", parameterCount)
+	parameters := ps.filterParameters(ssmParameters)
 
-	parameters := filterParameters(ssmParameters)
+	ps.Log.Debugf("Found %d parameters matching pattern /cap/env/app/key", len(ssmParameters))
 
 	secrets = getApplicationSecrets(parameters)
 
@@ -81,13 +78,13 @@ func ensurePathPrefix(s string) string {
 	}
 }
 
-func filterParameters(ssmParameters []*ssm.Parameter) []parameter {
+func (ps *parameterStore) filterParameters(ssmParameters []*ssm.Parameter) []parameter {
 	filteredParameters := make([]parameter, 0, len(ssmParameters))
 
 	for _, p := range ssmParameters {
 		name, err := parseParameterName(*p.Name)
 		if err != nil {
-			fmt.Printf("\032mIncompatible parameter name '%s', skipping...\033{0m\n", *p.Name)
+			ps.Log.Debugf("Skipping incompatible parameter name %q", *p.Name)
 			continue
 		}
 

@@ -14,13 +14,12 @@ import (
 )
 
 const (
-	DefaultPollTimeout         = 30 * time.Second
+	DefaultPollTimeout         = 30
 	KubernetesNamespaceEnvName = "KUBERNETES_NAMESPACE"
 )
 
 func main() {
 	logger := logging.NewLogger()
-
 
 	m, err := NewMain(logger)
 	if err != nil {
@@ -77,18 +76,17 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 	}
 
 	region := "eu-central-1"
-	path := "/" + namespace
 
 	fmt.Printf("#\n")
-	fmt.Printf("# [SETUP] Pull from AWS SystemManager Parameters using: Path=\033[33m%s\033[0m, Account=\033[33m%s\033[0m, Region=\033[33m%s\033[0m\n", path, accountId, region)
-	fmt.Printf("# [SETUP] Synchronize Kubernetes secrets in: Namespace=\033[33m%s\033[0m\n", namespace)
+	printConfig(map[string]string{
+		"config.aws.region":              region,
+		"config.aws.accountId":           accountId,
+		"config.aws.ssm.path":            "/" + namespace,
+		"config.aws.ssm.recursive":       "true",
+		"config.aws.ssm.with_decryption": "true",
+		"config.kubernetes.namespace":    namespace,
+	})
 	fmt.Printf("#\n")
-
-	config := ssm2k8s.Config{
-		AccountId: accountId,
-		Namespace: namespace,
-		Region:    region,
-	}
 
 	secretStore, err := k8s.NewSecretStore(log, namespace)
 	if err != nil {
@@ -104,16 +102,35 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 		PollTimeout: DefaultPollTimeout,
 		Log:         log,
 		close:       make(chan bool),
-		sync:        ssm2k8s.NewSync(config, secretStore, parameterStore),
+		sync:        ssm2k8s.NewSync(log, namespace, secretStore, parameterStore),
 	}, nil
+}
+
+func printConfig(config map[string]string) {
+	max := 0
+	for k := range config {
+		l := len(k)
+		if l > max {
+			max = l
+		}
+	}
+
+	format := fmt.Sprintf("# \033[34m%%-%ds\033[0m \033[33m%%s\033[0m\n", max)
+
+	for k, v := range config {
+		fmt.Printf(format, k, v)
+	}
+
 }
 
 func (m *MainApp) run() {
 	defer m.wg.Done()
 	for {
 		select {
-		case <-time.After(m.PollTimeout):
+		case <-time.After(m.PollTimeout * time.Second):
+			m.Log.Info("Synchronizing secrets")
 			m.sync.SyncSecrets()
+			m.Log.Infof("Done synchronizing secrets. Waiting %d seconds", m.PollTimeout)
 
 		case <-m.close:
 			m.Log.Debug("Channel closed, quitting...")

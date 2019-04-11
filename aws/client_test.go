@@ -13,5 +13,5 @@ func TestGetParameters(t *testing.T) {
 
 	secrets, _ := stub.GetApplicationSecrets("p-project")
 
-	domain.PrintApplicationSecrets(secrets, "test")
+	domain.PrintApplicationSecrets(secrets)
 }
