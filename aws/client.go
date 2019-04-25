@@ -10,6 +10,8 @@ import (
 type (
 	SsmClient interface {
 		GetParametersByPath(path string) ([]*ssm.Parameter, error)
+		PutParameter(name string, value string, overwrite bool) error
+		DeleteParameter(name string) error
 	}
 	SsmConfig struct {
 		Region    string
@@ -92,12 +94,20 @@ func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 	return parameters, nil
 }
 
-func (c *ssmClient) PutParameter(name string, value string) error {
+func (c *ssmClient) PutParameter(name string, value string, overwrite bool) error {
 	_, err := c.ssm.PutParameter(&ssm.PutParameterInput{
 		Name:      aws.String(name),
-		Value:     aws.String(value),
-		Overwrite: aws.Bool(true),
+		Overwrite: aws.Bool(overwrite),
 		Type:      aws.String(ssm.ParameterTypeSecureString),
+		Value:     aws.String(value),
+	})
+
+	return err
+}
+
+func (c *ssmClient) DeleteParameter(name string) error {
+	_, err := c.ssm.DeleteParameter(&ssm.DeleteParameterInput{
+		Name: aws.String(name),
 	})
 
 	return err

@@ -1,48 +1,38 @@
 package main
 
 import (
-	"fmt"
-	"github.com/thofisch/ssm2k8s/aws"
+	"os"
+
 	"github.com/thofisch/ssm2k8s/internal/logging"
-	"strings"
-	"time"
+	"gopkg.in/alecthomas/kingpin.v2"
+)
+
+var (
+	app           = kingpin.New("mystico", "A command-line secret manager")
+	debug         = app.Flag("debug", "Enable debug mode.").Bool()
+	putCmd        = app.Command("put", "Create/update a secret.")
+	putOptions    = NewPutCommand(putCmd)
+	listCmd       = app.Command("list", "List secrets")
+	deleteCmd     = app.Command("delete", "Delete secrets")
+	deleteOptions = NewDeleteCommand(deleteCmd)
 )
 
 func main() {
 	logger := logging.NewConsoleLogger()
 
-	//var keyValuePairs keyValuePairs = make(keyValuePairs)
-	//
-	//flag.NewFlagSet()
-	//
-	//flag.Var(&keyValuePairs, "list1", "some description")
-	//port := flag.Int("port", 8088, "Service Port Number")
-	//flag.Parse()
-	//
-	//fmt.Printf("%#v\n", keyValuePairs)
-	//fmt.Printf("%d\n", port)
+	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	case putCmd.FullCommand():
+		ExecutePut(logger, putOptions)
 
+	case listCmd.FullCommand():
+		ExecuteList(logger)
 
+	case deleteCmd.FullCommand():
+		ExecuteDelete(logger, deleteOptions)
 
-
-
+	default:
+		kingpin.Usage()
+		os.Exit(1)
+	}
 
 }
-
-//
-//type keyValuePairs map[string]string
-//
-//func (kvp *keyValuePairs) String() string {
-//	return fmt.Sprintf("Value: %#v\n", *kvp)
-//}
-//
-//func (kvp *keyValuePairs) Set(value string) error {
-//	split := strings.Split(value, "=")
-//	if len(split) != 2 {
-//		return fmt.Errorf("'%s' is unaccepted", value)
-//	}
-//
-//	map[string]string(*kvp)[split[0]] = split[1]
-//
-//	return nil
-//}

@@ -15,6 +15,8 @@ import (
 type (
 	ParameterStore interface {
 		GetApplicationSecrets(capability string) (secrets domain.ApplicationSecrets, err error)
+		PutApplicationSecret(capability string, environment string, application string, key string, value string, overwrite bool) error
+		DeleteApplicationSecret(capability string, environment string, application string, key string) error
 	}
 	parameterStore struct {
 		Log    logging.Logger
@@ -174,4 +176,17 @@ func getKeyValuePairs(parameters []parameter) map[string]string {
 	}
 
 	return kv
+}
+
+func (ps *parameterStore) PutApplicationSecret(capability string, environment string, application string, key string, value string, overwrite bool) error {
+	name := fmt.Sprintf("/%s/%s/%s/%s", capability, environment, application, key)
+
+	return ps.Client.PutParameter(name, value, overwrite)
+}
+
+
+func (ps *parameterStore) DeleteApplicationSecret(capability string, environment string, application string, key string) error {
+	name := fmt.Sprintf("/%s/%s/%s/%s", capability, environment, application, key)
+
+	return ps.Client.DeleteParameter(name)
 }
