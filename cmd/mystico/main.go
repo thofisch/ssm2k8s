@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/thofisch/ssm2k8s/internal/config"
 	"github.com/thofisch/ssm2k8s/internal/logging"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -19,6 +20,8 @@ var (
 
 func main() {
 	logger := logging.NewConsoleLogger()
+
+	app.Version(config.Version + " (" +config.Commit + " " + config.BuildDate + ")")
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case putCmd.FullCommand():
