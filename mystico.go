@@ -1,12 +1,13 @@
 package ssm2k8s
 
 import (
+	"strings"
+	"time"
+
 	"github.com/thofisch/ssm2k8s/aws"
 	"github.com/thofisch/ssm2k8s/domain"
 	"github.com/thofisch/ssm2k8s/internal/logging"
 	"github.com/thofisch/ssm2k8s/k8s"
-	"strings"
-	"time"
 )
 
 type (
