@@ -82,7 +82,6 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 	printConfig(map[string]string{
 		"config.aws.region":              region,
 		"config.aws.accountId":           accountId,
-		"config.aws.ssm.path":            "/" + namespace,
 		"config.aws.ssm.recursive":       "true",
 		"config.aws.ssm.with_decryption": "true",
 		"config.kubernetes.namespace":    namespace,
