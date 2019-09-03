@@ -9,6 +9,7 @@ import (
 
 	"github.com/thofisch/ssm2k8s"
 	"github.com/thofisch/ssm2k8s/aws"
+	"github.com/thofisch/ssm2k8s/internal/config"
 	"github.com/thofisch/ssm2k8s/internal/logging"
 	"github.com/thofisch/ssm2k8s/k8s"
 )
@@ -56,7 +57,7 @@ type MainApp struct {
 
 func NewMain(log logging.Logger) (*MainApp, error) {
 	fmt.Printf("#\n")
-	fmt.Printf("# mysticod version 0.1 - synchronizing secrets\n")
+	fmt.Printf("# mysticod version %s - synchronizing secrets\n", config.VersionString)
 	fmt.Printf("#\n")
 	fmt.Printf("# Initializing... ")
 

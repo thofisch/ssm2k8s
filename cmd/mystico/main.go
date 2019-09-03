@@ -21,7 +21,7 @@ var (
 func main() {
 	logger := logging.NewConsoleLogger()
 
-	app.Version(config.Version + " (" +config.Commit + " " + config.BuildDate + ")")
+	app.Version(config.VersionString)
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case putCmd.FullCommand():
