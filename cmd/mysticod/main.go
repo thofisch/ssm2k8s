@@ -125,16 +125,16 @@ func printConfig(config map[string]string) {
 	for k, v := range config {
 		fmt.Printf(format, k, v)
 	}
-
 }
 
 func (m *MainApp) run() {
 	defer m.wg.Done()
 	for {
+		m.Log.Info("Synchronizing secrets")
+		m.sync.SyncSecrets()
+
 		select {
 		case <-time.After(m.PollTimeout * time.Second):
-			m.Log.Info("Synchronizing secrets")
-			m.sync.SyncSecrets()
 			m.Log.Infof("Done synchronizing secrets. Waiting %d seconds", m.PollTimeout)
 
 		case <-m.close:
