@@ -94,7 +94,7 @@ var parameterNamePattern = regexp.MustCompile("^/(?P<app>[^/]+)/(?P<env>[^/]+)/(
 
 func parseParameterName(name string) (parameterName, error) {
 	if !parameterNamePattern.MatchString(name) {
-		return parameterName{}, fmt.Errorf("name '%s' is not of the expected format: %s", name, expectedFormat)
+		return parameterName{}, fmt.Errorf("name %q is not of the expected format %q", name, expectedFormat)
 	}
 
 	groups := util.FindNamedGroups(parameterNamePattern, name)

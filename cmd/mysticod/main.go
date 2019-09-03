@@ -78,7 +78,7 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 
 	region := "eu-central-1"
 
-	fmt.Printf("#\n")
+	fmt.Println()
 	printConfig(map[string]string{
 		"config.aws.region":              region,
 		"config.aws.accountId":           accountId,
@@ -86,7 +86,7 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 		"config.aws.ssm.with_decryption": "true",
 		"config.kubernetes.namespace":    namespace,
 	})
-	fmt.Printf("#\n")
+	fmt.Println()
 
 	secretStore, err := k8s.NewSecretStore(log, namespace)
 	if err != nil {
