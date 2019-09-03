@@ -17,6 +17,7 @@ import (
 const (
 	DefaultPollTimeout         = 30
 	KubernetesNamespaceEnvName = "KUBERNETES_NAMESPACE"
+	RegionEnvName              = "AWS_DEFAULT_REGION"
 )
 
 func main() {
@@ -71,12 +72,8 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 
 	// TODO -- get namespace from configuration
 
-	namespace, ok := os.LookupEnv(KubernetesNamespaceEnvName)
-	if !ok {
-		panic(fmt.Sprintf("Expected environment variable %q to containing namespace information", KubernetesNamespaceEnvName))
-	}
-
-	region := "eu-central-1"
+	namespace := ensureEnvConfig(KubernetesNamespaceEnvName)
+	region := ensureEnvConfig(RegionEnvName)
 
 	fmt.Println()
 	printConfig(map[string]string{
@@ -104,6 +101,14 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 		close:       make(chan bool),
 		sync:        ssm2k8s.NewSync(log, secretStore, parameterStore),
 	}, nil
+}
+
+func ensureEnvConfig(key string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		panic(fmt.Sprintf("Expected environment variable %q", key))
+	}
+	return value
 }
 
 func printConfig(config map[string]string) {
