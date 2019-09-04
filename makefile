@@ -46,46 +46,34 @@ release-%:
 
 all-release: $(addprefix release-,$(subst /,-,$(ALL_PLATFORMS))) ## publish all defined OS architecture release artifacts
 
-#     -t, --tag            Git tag to upload to (*)
-#     -n, --name           Name of the file (*)
-#     -l, --label          Label (description) of the file
-#     -f, --file           File to upload (use - for stdin) (*)
-#     -R, --replace        Replace asset with same name if it already exists (WARNING: not atomic, failure to upload will remove the original asset too)
-
 release: ; $(info $(M) Uploading binary $(OUTBIN)) @ ## publish release artifact for current OS architecture
-	@github-release -v upload	\
-		-s eed63942ff8087e955829bd94a50d15e6623073e \
-		--user $(OWNER) 		\
-		--repo $(REPO)			\
-		--tag $(VERSION)		\
-		--name $(EXECUTABLE)	\
-		--file $(OUTBIN)
+	./scripts/git-upload.sh	\
+		$(OWNER)				\
+		$(REPO)					\
+		$(VERSION)				\
+		$(EXECUTABLE)			\
+		$(OUTBIN)
 
-github-release-create: github-release
-	@github-release -v release	\
-		-s eed63942ff8087e955829bd94a50d15e6623073e \
-		--tag $(VERSION)	\
-		--user $(OWNER) 	\
-		--repo $(REPO)		\
-
-github-release:
-	GOOS=$(CURRENT_OS) GOARCH=$(CURRENT_ARCH) go get -u github.com/aktau/github-release
+github-release: ## create github release from version tag
+	./scripts/git-release.sh	\
+		$(OWNER)				\
+		$(REPO)					\
+		$(VERSION)
 
 .PHONY: docker
 docker: docker-build docker-push ## build and push docker container
 
 .PHONY: docker-build
 docker-build: ; $(info $(M) Building docker container $(DOCKER_IMAGE_NAME)) @ ## build docker image
-	docker build -t $(DOCKER_IMAGE_NAME) .
+	@docker build -t $(DOCKER_IMAGE_NAME) .
 
 .PHONY: docker-push
 docker-push: ; $(info $(M) Pushing docker container $(DOCKER_IMAGE_NAME)) @ ## push docker image
-	docker push $(DOCKER_IMAGE_NAME)
+	@docker push $(DOCKER_IMAGE_NAME)
 
 .PHONY: clean
 clean: ; $(info $(M) Cleaning...) @ ## clean the build artifacts
 	@rm -rf $(BIN)
-
 
 .PHONY: version
 version: ## prints the version (from either environment VERSION, git describe, or .version. default: v0)
