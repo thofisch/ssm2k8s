@@ -34,7 +34,7 @@ build-%:
 all-build: $(addprefix build-,$(subst /,-,$(ALL_PLATFORMS))) ## build all defined OS architectures
 
 build: ; $(info $(M) Building binary $(OUTBIN)) @ ## build mystico for current OS architecture
-	@CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build -ldflags '$(LDFLAGS)' -a -installsuffix cgo -o $(OUTBIN) ./cmd/mystico
+	@CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build -ldflags '$(LDFLAGS)' -a -installsuffix cgo -o $(OUTBIN) ./cmd/mysticod
 
 release-windows-%: EXT = .exe
 release-%:
@@ -47,7 +47,7 @@ release-%:
 all-release: $(addprefix release-,$(subst /,-,$(ALL_PLATFORMS))) ## publish all defined OS architecture release artifacts
 
 release: ; $(info $(M) Uploading binary $(OUTBIN)) @ ## publish release artifact for current OS architecture
-	./scripts/git-upload.sh	\
+	@./scripts/git-upload.sh	\
 		$(OWNER)				\
 		$(REPO)					\
 		$(VERSION)				\
@@ -55,7 +55,7 @@ release: ; $(info $(M) Uploading binary $(OUTBIN)) @ ## publish release artifact
 		$(OUTBIN)
 
 github-release: ## create github release from version tag
-	./scripts/git-release.sh	\
+	@./scripts/git-release.sh	\
 		$(OWNER)				\
 		$(REPO)					\
 		$(VERSION)
@@ -65,7 +65,7 @@ docker: docker-build docker-push ## build and push docker container
 
 .PHONY: docker-build
 docker-build: ; $(info $(M) Building docker container $(DOCKER_IMAGE_NAME)) @ ## build docker image
-	@docker build -t $(DOCKER_IMAGE_NAME) .
+	@docker build --build-arg LDFLAGS="$(LDFLAGS)" -t $(DOCKER_IMAGE_NAME) .
 
 .PHONY: docker-push
 docker-push: ; $(info $(M) Pushing docker container $(DOCKER_IMAGE_NAME)) @ ## push docker image

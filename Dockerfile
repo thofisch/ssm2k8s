@@ -1,5 +1,6 @@
 FROM golang:1.12 as builder
 LABEL maintainer="Thomas Fischer <thfis@dfds.com>"
+ARG LDFLAGS
 
 WORKDIR ${GOPATH}/src/github.com/thofisch/ssm2k8s
 
@@ -12,7 +13,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -v -installsuffix cgo -o /go/bin/mysticod ./cmd/mysticod
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "${LDFLAGS}" -a -installsuffix cgo -o /go/bin/mysticod ./cmd/mysticod
 # RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go install -a -tags netgo -ldflags '-w -extldflags "-static"' ./cmd/weaviate-server
 
 FROM alpine:latest
