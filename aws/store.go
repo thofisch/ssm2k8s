@@ -99,6 +99,10 @@ func parseParameterName(name string) (parameterName, error) {
 
 	groups := util.FindNamedGroups(parameterNamePattern, name)
 
+	if groups["app"]=="managed" {
+		return parameterName{}, fmt.Errorf("ignored %q as is uses the reservered prefix %q", name, "managed")
+	}
+
 	return parameterName{
 		Application: groups["app"],
 		Environment: groups["env"],

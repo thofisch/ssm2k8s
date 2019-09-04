@@ -90,6 +90,12 @@ func Test_parseParameterName_invalid_name(t *testing.T) {
 	}
 }
 
+func Test_parseParameterName_ignore_managed_applications(t *testing.T) {
+	_, err := parseParameterName("/managed/prod/key")
+
+	assert.NotOk(t, err)
+}
+
 func Test_parseParameterName_valid_name(t *testing.T) {
 	pn, err := parseParameterName("/a/b/c")
 
