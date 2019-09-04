@@ -34,7 +34,7 @@ build-%:
 all-build: $(addprefix build-,$(subst /,-,$(ALL_PLATFORMS))) ## build all defined OS architectures
 
 build: ; $(info $(M) Building binary $(OUTBIN)) @ ## build mystico for current OS architecture
-	@CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build -ldflags '$(LDFLAGS)' -a -installsuffix cgo -o $(OUTBIN) ./cmd/mysticod
+	@CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build -ldflags '$(LDFLAGS)' -a -installsuffix cgo -o $(OUTBIN) ./cmd/mystico
 
 release-windows-%: EXT = .exe
 release-%:
@@ -47,18 +47,23 @@ release-%:
 all-release: $(addprefix release-,$(subst /,-,$(ALL_PLATFORMS))) ## publish all defined OS architecture release artifacts
 
 release: ; $(info $(M) Uploading binary $(OUTBIN)) @ ## publish release artifact for current OS architecture
-	@./scripts/git-upload.sh	\
-		$(OWNER)				\
-		$(REPO)					\
-		$(VERSION)				\
-		$(EXECUTABLE)			\
-		$(OUTBIN)
+	@github-release -v upload									\
+		--security-token $$(git config --global github.token)	\
+		--user $(OWNER) 										\
+		--repo $(REPO)											\
+		--tag $(VERSION)										\
+		--name $(EXECUTABLE)									\
+		--file $(OUTBIN)
 
-github-release: ## create github release from version tag
-	@./scripts/git-release.sh	\
-		$(OWNER)				\
-		$(REPO)					\
-		$(VERSION)
+github-release-create: github-release
+	@github-release -v release									\
+		--security-token $$(git config --global github.token)	\
+		--tag $(VERSION)										\
+		--user $(OWNER) 										\
+		--repo $(REPO)											\
+
+github-release:
+	GOOS=$(CURRENT_OS) GOARCH=$(CURRENT_ARCH) go get -u github.com/aktau/github-release
 
 .PHONY: docker
 docker: docker-build docker-push ## build and push docker container

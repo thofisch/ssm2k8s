@@ -3,9 +3,11 @@ module github.com/thofisch/ssm2k8s
 go 1.12
 
 require (
+	github.com/aktau/github-release v0.7.2 // indirect
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf
 	github.com/aws/aws-sdk-go v1.18.6
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/protobuf v1.3.1
 	github.com/google/btree v1.0.0
@@ -22,6 +24,8 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/pflag v1.0.3
+	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80 // indirect
+	github.com/voxelbrain/goptions v0.0.0-20180630082107-58cddc247ea2 // indirect
 	golang.org/x/crypto v0.0.0-20190320223903-b7391e95e576
 	golang.org/x/net v0.0.0-20190320064053-1272bf9dcd53
 	golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914
