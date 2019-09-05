@@ -3,6 +3,7 @@ package aws
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -30,7 +31,7 @@ type (
 	}
 	parameterName struct {
 		Application string
-		Environment string
+		Paths       []string
 		Key         string
 	}
 )
@@ -89,9 +90,9 @@ func (ps *parameterStore) filterParameters(ssmParameters []*ssm.Parameter) []par
 	return filteredParameters
 }
 
-const expectedFormat = "/application/environment/key"
+const expectedFormat = "/application/*/key"
 
-var parameterNamePattern = regexp.MustCompile("^/(?P<app>[^/]+)/(?P<env>[^/]+)/(?P<key>[^/]+)$")
+var parameterNamePattern = regexp.MustCompile("^/(?P<app>[^/]+)(?:/?(?P<paths>.+))?/(?P<key>[^/]+)$")
 
 func parseParameterName(name string) (parameterName, error) {
 	if !parameterNamePattern.MatchString(name) {
@@ -99,16 +100,39 @@ func parseParameterName(name string) (parameterName, error) {
 	}
 
 	groups := util.FindNamedGroups(parameterNamePattern, name)
+	application := groups["app"]
 
-	if config.IsReservedWord(groups["app"]) {
-		return parameterName{}, fmt.Errorf("ignored %q as it uses the one of the reservered words: %q", groups["app"], config.ReservedWords)
+	if config.IsReservedWord(application) {
+		return parameterName{}, fmt.Errorf("ignored %q as it uses the one of the reservered words: %q", name, config.ReservedWords)
+	}
+
+	pathParts, err := getPaths(groups["paths"], name)
+
+	if err != nil {
+		return parameterName{}, err
 	}
 
 	return parameterName{
-		Application: groups["app"],
-		Environment: groups["env"],
+		Application: application,
+		Paths:       pathParts,
 		Key:         groups["key"],
 	}, nil
+}
+
+func getPaths(paths string, name string) ([]string, error) {
+	if paths != "" {
+		pathParts := strings.Split(paths, "/")
+
+		for _, path := range pathParts {
+			if len(path) <= 0 {
+				return nil, fmt.Errorf("ignored %q as it has an illegal path", name)
+			}
+		}
+
+		return pathParts, nil
+	} else {
+		return []string{}, nil
+	}
 }
 
 func getApplicationSecrets(parameters []parameter) domain.ApplicationSecrets {
@@ -142,7 +166,7 @@ func mapApplications(parameters []parameter) map[string][]parameter {
 }
 
 func getSecretName(pn parameterName) string {
-	return fmt.Sprintf("%s-%s-secret", pn.Environment, pn.Application)
+	return fmt.Sprintf("%s-%s-secret", strings.Join(pn.Paths, "-"), pn.Application)
 }
 
 func mapData(parameters []parameter) domain.SecretData {

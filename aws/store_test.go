@@ -1,7 +1,6 @@
 package aws
 
 import (
-	"github.com/thofisch/ssm2k8s/internal/logging"
 	"testing"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/thofisch/ssm2k8s/domain"
 	"github.com/thofisch/ssm2k8s/internal/assert"
+	"github.com/thofisch/ssm2k8s/internal/logging"
 	"github.com/thofisch/ssm2k8s/internal/util"
 )
 
@@ -17,14 +17,14 @@ func TestParameterStore_GetApplicationSecrets(t *testing.T) {
 	last := first.Add(time.Second)
 	sut := NewParameterStoreWithClient(logging.NewNullLogger(), NewSsmClientStub(
 		&ssm.Parameter{
-			Name:             aws.String("/app/env/key1"),
+			Name:             aws.String("/app/foo/bar/key1"),
 			Value:            aws.String("secret"),
 			Type:             aws.String(ssm.ParameterTypeSecureString),
 			LastModifiedDate: aws.Time(first),
 			Version:          aws.Int64(int64(0)),
 		},
 		&ssm.Parameter{
-			Name:             aws.String("/app/env/key2"),
+			Name:             aws.String("/app/foo/bar/key2"),
 			Value:            aws.String("value"),
 			Type:             aws.String(ssm.ParameterTypeString),
 			LastModifiedDate: aws.Time(last),
@@ -36,7 +36,7 @@ func TestParameterStore_GetApplicationSecrets(t *testing.T) {
 
 	assert.Ok(t, err)
 	assert.Equal(t, domain.ApplicationSecrets{
-		"env-app-secret": domain.ApplicationSecret{
+		"foo-bar-app-secret": domain.ApplicationSecret{
 			LastModified: last,
 			Hash:         util.HashKeyValuePairs(map[string]string{"key1": "secret", "key2": "value"}),
 			Data:         map[string]string{"key1": "secret", "key2": "value"},
@@ -74,7 +74,6 @@ func Test_parseParameterName_invalid_name(t *testing.T) {
 		{name: "missing slash prefix", key: "a/b/c/d/e"},
 		{name: "slash_app", key: "/a"},
 		{name: "slash_app_slash", key: "/a/"},
-		{name: "slash_app_slash_env", key: "/a/b"},
 		{name: "slash_app_slash_env_slash", key: "/a/b/"},
 		{name: "slash_app_slash_env_slash_key_slash", key: "/a/b/c/"},
 		{name: "slash_app_slash_env_slash_slash_key", key: "/a/b//d"},
@@ -97,20 +96,29 @@ func Test_parseParameterName_ignore_managed_applications(t *testing.T) {
 }
 
 func Test_parseParameterName_valid_name(t *testing.T) {
-	pn, err := parseParameterName("/a/b/c")
+	pn, err := parseParameterName("/app/foo/bar/baz/key")
 
 	assert.Ok(t, err)
-	assert.Equal(t, "a", pn.Application)
-	assert.Equal(t, "b", pn.Environment)
-	assert.Equal(t, "c", pn.Key)
+	assert.Equal(t, "app", pn.Application)
+	assert.Equal(t, []string{"foo", "bar", "baz"}, pn.Paths)
+	assert.Equal(t, "key", pn.Key)
+}
+
+func Test_parseParameterName_valid_name_without_paths(t *testing.T) {
+	pn, err := parseParameterName("/app/key")
+
+	assert.Ok(t, err)
+	assert.Equal(t, "app", pn.Application)
+	assert.Equal(t, []string{}, pn.Paths)
+	assert.Equal(t, "key", pn.Key)
 }
 
 func Test_getSecretName(t *testing.T) {
 	parameterName := parameterName{
-		Application: "a",
-		Environment: "b",
-		Key:         "c",
+		Application: "app",
+		Paths:       []string{"foo", "bar", "baz"},
+		Key:         "key",
 	}
 
-	assert.Equal(t, "b-a-secret", getSecretName(parameterName))
+	assert.Equal(t, "foo-bar-baz-app-secret", getSecretName(parameterName))
 }
