@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	app           = kingpin.New("mystico", "A command-line secret manager")
+	app           = kingpin.New(os.Args[0], "A command-line secret manager")
 	debug         = app.Flag("debug", "Enable debug mode.").Bool()
 	putCmd        = app.Command("put", "Create/update a secret.")
 	putOptions    = NewPutCommand(putCmd)

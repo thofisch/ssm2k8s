@@ -51,20 +51,12 @@ func NewSsmClient(logger logging.Logger, config *SsmConfig) (SsmClient, error) {
 }
 
 func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
-
 	var nextToken *string = nil
 	var parameters []*ssm.Parameter
 
-	//log.NewContextLogger(logrus.Fields{
-	//	"path":      path,
-	//	"recursive": c.Config.Recursive,
-	//	"decrypt":   c.Config.Decrypt,
-	//	"region":    c.Config.Region,
-	//})
-
 	for {
-		c.Log.Debugf("aws ssm get-parameters-by-path(path=%q, recursive=%t, withDecryption=%t, nextToken=%s\n",
-			path, c.Config.Recursive, c.Config.Decrypt, nextToken)
+		c.Log.Debugf("aws ssm get-parameters-by-path(path=%q, recursive=%t, withDecryption=%t, nextToken=%q)",
+			path, c.Config.Recursive, c.Config.Decrypt, safeString(nextToken))
 
 		output, err := c.ssm.GetParametersByPath(&ssm.GetParametersByPathInput{
 			Path:           aws.String(path),
@@ -77,7 +69,7 @@ func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 			return nil, err
 		}
 
-		c.Log.Debugf("Found %d parameters\n", len(output.Parameters))
+		c.Log.Debugf("Found %d parameters", len(output.Parameters))
 
 		for _, p := range output.Parameters {
 			parameters = append(parameters, p)
@@ -92,6 +84,16 @@ func (c *ssmClient) GetParametersByPath(path string) ([]*ssm.Parameter, error) {
 	}
 
 	return parameters, nil
+}
+
+func safeString(s *string) string {
+	var ss string
+	if s == nil {
+		ss = ""
+	} else {
+		ss = *s
+	}
+	return ss
 }
 
 func (c *ssmClient) PutParameter(name string, value string, overwrite bool) error {

@@ -102,7 +102,7 @@ func NewMain(log logging.Logger) (*MainApp, error) {
 		PollTimeout: DefaultPollTimeout,
 		Log:         log,
 		close:       make(chan bool),
-		sync:        ssm2k8s.NewSync(log, namespace, secretStore, parameterStore),
+		sync:        ssm2k8s.NewSync(log, secretStore, parameterStore),
 	}, nil
 }
 

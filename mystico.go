@@ -15,24 +15,22 @@ type (
 	}
 	syncImpl struct {
 		Log            logging.Logger
-		Namespace      string
 		SecretStore    k8s.SecretStore
 		ParameterStore aws.ParameterStore
 	}
 )
 
-func NewSync(logger logging.Logger, namespace string, secretStore k8s.SecretStore, parameterStore aws.ParameterStore) Sync {
+func NewSync(logger logging.Logger, secretStore k8s.SecretStore, parameterStore aws.ParameterStore) Sync {
 	return &syncImpl{
 		Log:            logger,
 		SecretStore:    secretStore,
 		ParameterStore: parameterStore,
-		Namespace:      namespace,
 	}
 }
 
 func (s *syncImpl) SyncSecrets() {
 	// aws
-	awsSecrets, err := s.ParameterStore.GetApplicationSecrets(s.Namespace)
+	awsSecrets, err := s.ParameterStore.GetApplicationSecrets()
 	if err != nil {
 		return
 	}

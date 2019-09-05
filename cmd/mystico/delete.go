@@ -10,9 +10,8 @@ import (
 
 
 type DeleteCommandOptions struct {
-	Capability  string
-	Environment string
 	Application string
+	Environment string
 	Secrets     []string
 }
 
@@ -20,11 +19,11 @@ func NewDeleteCommand(cmd *kingpin.CmdClause) *DeleteCommandOptions {
 	opt := &DeleteCommandOptions{
 		Secrets: []string{},
 	}
-	cmd.Flag("environment", "Environment").Short('e').Default("prod").StringVar(&opt.Environment)
 
-	cmd.Arg("capability", "Nickname for user.").Required().StringVar(&opt.Capability)
 	cmd.Arg("application", "Name of application.").Required().StringVar(&opt.Application)
 	cmd.Arg("secrets", "listCmd of secrets").Required().StringsVar(&opt.Secrets)
+
+	cmd.Flag("environment", "Environment").Short('e').Default("prod").StringVar(&opt.Environment)
 
 	return opt
 }
@@ -36,10 +35,9 @@ func ExecuteDelete(logger logging.Logger, options *DeleteCommandOptions) {
 	}
 
 	for _, key := range options.Secrets {
-		name := fmt.Sprintf("/%s/%s/%s/%s", options.Capability, options.Environment, options.Application, key)
+		fmt.Printf("Deleting \033[33m/%s/%s/%s\033[0m\n", options.Application, options.Environment, key)
 
-		fmt.Printf("Deleting \033[33m%s\033[0m\n", name)
-		err := parameterStore.DeleteApplicationSecret(options.Capability, options.Environment, options.Application, key)
+		err := parameterStore.DeleteApplicationSecret(options.Application, options.Environment, key)
 		if err != nil {
 			panic(err)
 		}

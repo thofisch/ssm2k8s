@@ -13,7 +13,7 @@ type (
 		Data         SecretData
 	}
 	ApplicationSecrets map[string]ApplicationSecret
-	SecretData map[string]string
+	SecretData         map[string]string
 )
 
 func (secrets ApplicationSecrets) String() string {
@@ -44,4 +44,3 @@ func (secrets ApplicationSecrets) String() string {
 
 	return sb.String()
 }
-

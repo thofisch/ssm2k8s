@@ -76,7 +76,7 @@ docker: docker-build docker-push ## build and push docker container
 
 .PHONY: docker-build
 docker-build: ; $(info $(M) Building docker container $(DOCKER_IMAGE_NAME)) @ ## build docker image
-	#docker build -t $(DOCKER_IMAGE_NAME) .
+	docker build -t $(DOCKER_IMAGE_NAME) .
 
 .PHONY: docker-push
 docker-push: ; $(info $(M) Pushing docker container $(DOCKER_IMAGE_NAME)) @ ## push docker image

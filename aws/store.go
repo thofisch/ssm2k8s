@@ -3,7 +3,6 @@ package aws
 import (
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -14,9 +13,9 @@ import (
 
 type (
 	ParameterStore interface {
-		GetApplicationSecrets(capability string) (secrets domain.ApplicationSecrets, err error)
-		PutApplicationSecret(capability string, environment string, application string, key string, value string, overwrite bool) error
-		DeleteApplicationSecret(capability string, environment string, application string, key string) error
+		GetApplicationSecrets() (secrets domain.ApplicationSecrets, err error)
+		PutApplicationSecret(application string, environment string, key string, value string, overwrite bool) error
+		DeleteApplicationSecret(application string, environment string, key string) error
 	}
 	parameterStore struct {
 		Log    logging.Logger
@@ -29,9 +28,8 @@ type (
 		Version      int64
 	}
 	parameterName struct {
-		Capability  string
-		Environment string
 		Application string
+		Environment string
 		Key         string
 	}
 )
@@ -51,33 +49,22 @@ func NewParameterStoreWithClient(logger logging.Logger, client SsmClient) Parame
 	}
 }
 
-func (ps *parameterStore) GetApplicationSecrets(capability string) (secrets domain.ApplicationSecrets, err error) {
-	path := ensurePathPrefix(capability)
+func (ps *parameterStore) GetApplicationSecrets() (secrets domain.ApplicationSecrets, err error) {
+	ps.Log.Info("Getting AWS SSM Parameters")
 
-	ps.Log.Infof("Getting AWS SSM Parameters from Namespace %q", path)
-	ssmParameters, err := ps.Client.GetParametersByPath(path)
+	ssmParameters, err := ps.Client.GetParametersByPath("/")
 	if err != nil {
 		ps.Log.Errorf("[ERROR] %s\n", err)
 		return nil, err
 	}
 
-	ps.Log.Debugf("Found %d parameters", len(ssmParameters))
-
 	parameters := ps.filterParameters(ssmParameters)
 
-	ps.Log.Debugf("Found %d parameters matching pattern /cap/env/app/key", len(ssmParameters))
+	ps.Log.Debugf("Found %d parameters matching pattern %s", len(parameters), expectedFormat)
 
 	secrets = getApplicationSecrets(parameters)
 
 	return
-}
-
-func ensurePathPrefix(s string) string {
-	if strings.HasPrefix(s, "/") {
-		return s
-	} else {
-		return "/" + s
-	}
 }
 
 func (ps *parameterStore) filterParameters(ssmParameters []*ssm.Parameter) []parameter {
@@ -101,19 +88,20 @@ func (ps *parameterStore) filterParameters(ssmParameters []*ssm.Parameter) []par
 	return filteredParameters
 }
 
-var parameterNamePattern = regexp.MustCompile("^/(?P<cap>[^/]+)/(?P<env>[^/]+)/(?P<app>[^/]+)/(?P<key>[^/]+)$")
+const expectedFormat = "/application/environment/key"
+
+var parameterNamePattern = regexp.MustCompile("^/(?P<app>[^/]+)/(?P<env>[^/]+)/(?P<key>[^/]+)$")
 
 func parseParameterName(name string) (parameterName, error) {
 	if !parameterNamePattern.MatchString(name) {
-		return parameterName{}, fmt.Errorf("name '%s' is not of the expected format: /capability/environment/application/key", name)
+		return parameterName{}, fmt.Errorf("name '%s' is not of the expected format: %s", name, expectedFormat)
 	}
 
 	groups := util.FindNamedGroups(parameterNamePattern, name)
 
 	return parameterName{
-		Capability:  groups["cap"],
-		Environment: groups["env"],
 		Application: groups["app"],
+		Environment: groups["env"],
 		Key:         groups["key"],
 	}, nil
 }
@@ -124,6 +112,8 @@ func getApplicationSecrets(parameters []parameter) domain.ApplicationSecrets {
 	applications := mapApplications(parameters)
 
 	for appName, appParameters := range applications {
+		fmt.Printf("%s\n", appName)
+
 		data := mapData(appParameters)
 		secrets[appName] = domain.ApplicationSecret{
 			LastModified: util.FindNewest(getDates(appParameters)),
@@ -178,15 +168,14 @@ func getKeyValuePairs(parameters []parameter) map[string]string {
 	return kv
 }
 
-func (ps *parameterStore) PutApplicationSecret(capability string, environment string, application string, key string, value string, overwrite bool) error {
-	name := fmt.Sprintf("/%s/%s/%s/%s", capability, environment, application, key)
+func (ps *parameterStore) PutApplicationSecret(application string, environment string, key string, value string, overwrite bool) error {
+	name := fmt.Sprintf("/%s/%s/%s", application, environment, key)
 
 	return ps.Client.PutParameter(name, value, overwrite)
 }
 
-
-func (ps *parameterStore) DeleteApplicationSecret(capability string, environment string, application string, key string) error {
-	name := fmt.Sprintf("/%s/%s/%s/%s", capability, environment, application, key)
+func (ps *parameterStore) DeleteApplicationSecret(application string, environment string, key string) error {
+	name := fmt.Sprintf("/%s/%s/%s", application, environment, key)
 
 	return ps.Client.DeleteParameter(name)
 }

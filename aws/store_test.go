@@ -13,30 +13,31 @@ import (
 )
 
 func TestParameterStore_GetApplicationSecrets(t *testing.T) {
-	then := time.Now().UTC()
+	first := time.Now().UTC()
+	last := first.Add(time.Second)
 	sut := NewParameterStoreWithClient(logging.NewNullLogger(), NewSsmClientStub(
 		&ssm.Parameter{
-			Name:             aws.String("/cap/env/app/key1"),
+			Name:             aws.String("/app/env/key1"),
 			Value:            aws.String("secret"),
 			Type:             aws.String(ssm.ParameterTypeSecureString),
-			LastModifiedDate: aws.Time(then),
+			LastModifiedDate: aws.Time(first),
 			Version:          aws.Int64(int64(0)),
 		},
 		&ssm.Parameter{
-			Name:             aws.String("/cap/env/app/key2"),
+			Name:             aws.String("/app/env/key2"),
 			Value:            aws.String("value"),
 			Type:             aws.String(ssm.ParameterTypeString),
-			LastModifiedDate: aws.Time(then),
+			LastModifiedDate: aws.Time(last),
 			Version:          aws.Int64(int64(0)),
 		},
 	))
 
-	parameters, err := sut.GetApplicationSecrets("cap")
+	parameters, err := sut.GetApplicationSecrets()
 
 	assert.Ok(t, err)
 	assert.Equal(t, domain.ApplicationSecrets{
 		"env-app-secret": domain.ApplicationSecret{
-			LastModified: then,
+			LastModified: last,
 			Hash:         util.HashKeyValuePairs(map[string]string{"key1": "secret", "key2": "value"}),
 			Data:         map[string]string{"key1": "secret", "key2": "value"},
 		},
@@ -55,6 +56,14 @@ func (stub *SsmClientStub) GetParametersByPath(path string) ([]*ssm.Parameter, e
 	return stub.Parameters, nil
 }
 
+func (stub *SsmClientStub) PutParameter(name string, value string, overwrite bool) error {
+	return nil
+}
+
+func (stub *SsmClientStub) DeleteParameter(name string) error {
+	return nil
+}
+
 func Test_parseParameterName_invalid_name(t *testing.T) {
 	tests := []struct {
 		name string
@@ -63,16 +72,13 @@ func Test_parseParameterName_invalid_name(t *testing.T) {
 		{name: "empty", key: ""},
 		{name: "only slashes", key: "////"},
 		{name: "missing slash prefix", key: "a/b/c/d/e"},
-		{name: "slash_cap", key: "/a"},
-		{name: "slash_cap_slash", key: "/a/"},
-		{name: "slash_cap_slash_env", key: "/a/b"},
-		{name: "slash_cap_slash_env_slash", key: "/a/b/"},
-		{name: "slash_cap_slash_env_slash_app", key: "/a/b/c"},
-		{name: "slash_cap_slash_env_slash_app_slash", key: "/a/b/c/"},
-		{name: "slash_cap_slash_env_slash_app_slash_key_slash", key: "/a/b/c/d/"},
-		{name: "slash_cap_slash_env_slash_app_slash_key_slash_extra", key: "/a/b/c/d/e"},
-		{name: "slash_cap_slash_env_slash_slash_key", key: "/a/b//d"},
-		{name: "slash_cap_slash_slash app_slash_key", key: "/a//c/d"},
+		{name: "slash_app", key: "/a"},
+		{name: "slash_app_slash", key: "/a/"},
+		{name: "slash_app_slash_env", key: "/a/b"},
+		{name: "slash_app_slash_env_slash", key: "/a/b/"},
+		{name: "slash_app_slash_env_slash_key_slash", key: "/a/b/c/"},
+		{name: "slash_app_slash_env_slash_slash_key", key: "/a/b//d"},
+		{name: "slash_app_slash_slash app_slash_key", key: "/a//c/d"},
 		{name: "slash_slash_env_slash_app_slash_key", key: "//b/c/d"},
 	}
 	for _, test := range tests {
@@ -85,22 +91,20 @@ func Test_parseParameterName_invalid_name(t *testing.T) {
 }
 
 func Test_parseParameterName_valid_name(t *testing.T) {
-	pn, err := parseParameterName("/a/b/c/d")
+	pn, err := parseParameterName("/a/b/c")
 
 	assert.Ok(t, err)
-	assert.Equal(t, "a", pn.Capability)
+	assert.Equal(t, "a", pn.Application)
 	assert.Equal(t, "b", pn.Environment)
-	assert.Equal(t, "c", pn.Application)
-	assert.Equal(t, "d", pn.Key)
+	assert.Equal(t, "c", pn.Key)
 }
 
 func Test_getSecretName(t *testing.T) {
 	parameterName := parameterName{
-		Capability:  "a",
+		Application: "a",
 		Environment: "b",
-		Application: "c",
-		Key:         "d",
+		Key:         "c",
 	}
 
-	assert.Equal(t, "b-c-secret", getSecretName(parameterName))
+	assert.Equal(t, "b-a-secret", getSecretName(parameterName))
 }
