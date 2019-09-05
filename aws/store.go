@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/thofisch/ssm2k8s/domain"
+	"github.com/thofisch/ssm2k8s/internal/config"
 	"github.com/thofisch/ssm2k8s/internal/logging"
 	"github.com/thofisch/ssm2k8s/internal/util"
 )
@@ -99,8 +100,8 @@ func parseParameterName(name string) (parameterName, error) {
 
 	groups := util.FindNamedGroups(parameterNamePattern, name)
 
-	if groups["app"]=="managed" {
-		return parameterName{}, fmt.Errorf("ignored %q as is uses the reservered prefix %q", name, "managed")
+	if config.IsReservedWord(groups["app"]) {
+		return parameterName{}, fmt.Errorf("ignored %q as it uses the one of the reservered words: %q", groups["app"], config.ReservedWords)
 	}
 
 	return parameterName{
