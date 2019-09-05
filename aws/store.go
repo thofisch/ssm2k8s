@@ -166,7 +166,7 @@ func mapApplications(parameters []parameter) map[string][]parameter {
 }
 
 func getSecretName(pn parameterName) string {
-	return fmt.Sprintf("%s-%s-secret", strings.Join(pn.Paths, "-"), pn.Application)
+	return strings.Join(append([]string{pn.Application}, pn.Paths...), "-")
 }
 
 func mapData(parameters []parameter) domain.SecretData {

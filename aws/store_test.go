@@ -36,7 +36,7 @@ func TestParameterStore_GetApplicationSecrets(t *testing.T) {
 
 	assert.Ok(t, err)
 	assert.Equal(t, domain.ApplicationSecrets{
-		"foo-bar-app-secret": domain.ApplicationSecret{
+		"app-foo-bar": domain.ApplicationSecret{
 			LastModified: last,
 			Hash:         util.HashKeyValuePairs(map[string]string{"key1": "secret", "key2": "value"}),
 			Data:         map[string]string{"key1": "secret", "key2": "value"},
@@ -120,5 +120,15 @@ func Test_getSecretName(t *testing.T) {
 		Key:         "key",
 	}
 
-	assert.Equal(t, "foo-bar-baz-app-secret", getSecretName(parameterName))
+	assert.Equal(t, "app-foo-bar-baz", getSecretName(parameterName))
+}
+
+func Test_getSecretName_without_paths(t *testing.T) {
+	parameterName := parameterName{
+		Application: "app",
+		Paths:       []string{},
+		Key:         "key",
+	}
+
+	assert.Equal(t, "app", getSecretName(parameterName))
 }
