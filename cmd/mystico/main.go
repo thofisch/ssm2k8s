@@ -10,7 +10,7 @@ import (
 
 var (
 	app           = kingpin.New(os.Args[0], "A command-line secret manager")
-	globalDebug   = app.Flag("globalDebug", "Enable globalDebug mode.").Envar("DEBUG").Bool()
+	globalDebug   = app.Flag("debug", "Enable debug mode.").Envar("DEBUG").Bool()
 	globalRegion  = app.Flag("region", "AWS region").Envar("AWS_DEFAULT_REGION").String()
 	putCmd        = app.Command("put", "Create/update a secret.")
 	putOptions    = NewPutCommand(putCmd)
