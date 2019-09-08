@@ -10,7 +10,7 @@ import (
 
 var (
 	app           = kingpin.New(os.Args[0], "A command-line secret manager")
-	debug         = app.Flag("debug", "Enable debug mode.").Bool()
+	debug         = app.Flag("debug", "Enable debug mode.").Envar("DEBUG").Bool()
 	putCmd        = app.Command("put", "Create/update a secret.")
 	putOptions    = NewPutCommand(putCmd)
 	listCmd       = app.Command("list", "List secrets")
@@ -19,11 +19,12 @@ var (
 )
 
 func main() {
-	logger := logging.NewConsoleLogger()
-
 	app.Version(config.VersionString)
 
-	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	command := kingpin.MustParse(app.Parse(os.Args[1:]))
+	logger := logging.NewConsoleLogger(*debug)
+
+	switch command {
 	case putCmd.FullCommand():
 		ExecutePut(logger, putOptions)
 

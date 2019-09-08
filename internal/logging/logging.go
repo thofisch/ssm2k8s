@@ -38,11 +38,11 @@ func NewLogger() Logger {
 	}
 }
 
-func NewConsoleLogger() Logger {
+func NewConsoleLogger(debug bool) Logger {
 	logger := logrus.New()
 	level := logrus.InfoLevel
 	timestamp := false
-	if _, ok := os.LookupEnv("DEBUG"); ok {
+	if debug {
 		level = logrus.DebugLevel
 		timestamp = true
 	}
