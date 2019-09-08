@@ -11,7 +11,7 @@ import (
 )
 
 func ExecuteList(logger logging.Logger) {
-	parameterStore, err := aws.NewParameterStore(logger, "eu-central-1")
+	parameterStore, err := aws.NewParameterStore(logger, *globalRegion)
 	if err != nil {
 		panic(err)
 	}

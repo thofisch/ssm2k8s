@@ -30,7 +30,7 @@ func NewPutCommand(cmd *kingpin.CmdClause) *PutCommandOptions {
 }
 
 func ExecutePut(logger logging.Logger, options *PutCommandOptions) {
-	parameterStore, err := aws.NewParameterStore(logger, "eu-central-1")
+	parameterStore, err := aws.NewParameterStore(logger, *globalRegion)
 	if err != nil {
 		panic(err)
 	}

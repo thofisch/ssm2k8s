@@ -29,7 +29,7 @@ func NewDeleteCommand(cmd *kingpin.CmdClause) *DeleteCommandOptions {
 }
 
 func ExecuteDelete(logger logging.Logger, options *DeleteCommandOptions) {
-	parameterStore, err := aws.NewParameterStore(logger, "eu-central-1")
+	parameterStore, err := aws.NewParameterStore(logger, *globalRegion)
 	if err != nil {
 		panic(err)
 	}
