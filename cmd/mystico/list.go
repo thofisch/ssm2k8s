@@ -21,7 +21,7 @@ type ListCommandOptions struct {
 func NewListCommand(cmd *kingpin.CmdClause) *ListCommandOptions {
 	opt := &ListCommandOptions{}
 
-	cmd.Arg("application", "Name of application.")/*.HintAction(applicationHint)*/.StringVar(&opt.Application)
+	cmd.Arg("application", "Name of application.") /*.HintAction(applicationHint)*/ .StringVar(&opt.Application)
 
 	cmd.Flag("verbose", "Print keys and values").Short('v').BoolVar(&opt.Verbose)
 	cmd.Flag("decode", "Print decoded values").Short('d').BoolVar(&opt.Decode)
@@ -44,22 +44,28 @@ func ExecuteList(logger logging.Logger, opt *ListCommandOptions) {
 		panic(err)
 	}
 
-	fmt.Printf("Found %d secrets in %q\n", len(secrets), "AWS SSM Parameter Store")
+	numSecrets := len(secrets)
+	fmt.Printf("Found %d secrets in %q\n", numSecrets, "AWS SSM Parameter Store")
+
+	if numSecrets == 0 {
+		return
+	}
+
 	fmt.Printf("\n")
 
 	format := NewListFormatter(secrets, opt.Verbose)
 
 	if opt.Verbose {
-		format("SECRET", "KEYS", "HASH", "LAST MODIFIED", "KEY", "VALUE")
+		format("PATH", "SECRET", "VERSION", "LAST MODIFIED", "VALUE")
 	} else {
-		format("SECRET", "KEYS", "HASH", "LAST MODIFIED")
+		format("PATH", "SECRET", "KEYS", "HASH", "LAST MODIFIED")
 	}
 
 	for _, secretName := range sortApplicationSecrets(secrets) {
 		secret := secrets[secretName]
 
 		if opt.Verbose {
-			for i, key := range sortSecretData(secret.Data) {
+			for _, key := range sortSecretData(secret.Data) {
 
 				var value string
 
@@ -69,15 +75,10 @@ func ExecuteList(logger logging.Logger, opt *ListCommandOptions) {
 					value = "***"
 				}
 
-				if i == 0 {
-					format(secret.Path, strconv.Itoa(len(secret.Data)), secret.Hash[0:7], secret.LastModified.Format(time.RFC3339), key, value)
-				} else {
-					format("", "", "", "", key, value)
-				}
+				format(secret.Path+"/"+key, secretName, "1", secret.LastModified.Format(time.RFC3339), value)
 			}
-
 		} else {
-			format(secret.Path, strconv.Itoa(len(secret.Data)), secret.Hash[0:7], secret.LastModified.Format(time.RFC3339))
+			format(secret.Path, secretName, strconv.Itoa(len(secret.Data)), secret.Hash[0:7], secret.LastModified.Format(time.RFC3339))
 		}
 	}
 }
