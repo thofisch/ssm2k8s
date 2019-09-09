@@ -46,26 +46,24 @@ func ExecuteDelete(logger logging.Logger, options *DeleteCommandOptions) {
 			panic(err)
 		}
 
-		for k, secret := range secrets {
-			if k == strings.ReplaceAll(options.Application, "/", "-") {
-				for key, _ := range secret.Data {
-					fmt.Printf("Deleting \033[33m/%s/%s\033[0m\n", application, key)
-
-					err := parameterStore.DeleteApplicationSecret(application, key)
-					if err != nil {
-						panic(err)
-					}
-				}
+		for _, secret := range secrets {
+			for key := range secret.Data {
+				deleteParameter(parameterStore, application, key)
 			}
 		}
 	} else {
 		for _, key := range options.Secrets {
-			fmt.Printf("Deleting \033[33m/%s/%s\033[0m\n", application, key)
-
-			err := parameterStore.DeleteApplicationSecret(application, key)
-			if err != nil {
-				panic(err)
-			}
+			deleteParameter(parameterStore, application, key)
 		}
+	}
+}
+
+func deleteParameter(parameterStore aws.ParameterStore, application string, key string) {
+	fmt.Printf("Deleting \033[33m/%s/%s\033[0m\n", application, key)
+
+	err := parameterStore.DeleteApplicationSecret(application, key)
+
+	if err != nil {
+		panic(err)
 	}
 }
