@@ -15,6 +15,7 @@ var (
 	putCmd        = app.Command("put", "Create/update a secret.")
 	putOptions    = NewPutCommand(putCmd)
 	listCmd       = app.Command("list", "List secrets")
+	listOptions   = NewListCommand(listCmd)
 	deleteCmd     = app.Command("delete", "Delete secrets")
 	deleteOptions = NewDeleteCommand(deleteCmd)
 )
@@ -25,12 +26,23 @@ func main() {
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 	logger := logging.NewConsoleLogger(*globalDebug)
 
+	//f, err := os.OpenFile("./log.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//defer f.Close()
+	//
+	//_, err = fmt.Fprintf(f, "%#v\n", os.Args)
+	//if err != nil {
+	//	panic(err)
+	//}
+
 	switch command {
 	case putCmd.FullCommand():
 		ExecutePut(logger, putOptions)
 
 	case listCmd.FullCommand():
-		ExecuteList(logger)
+		ExecuteList(logger, listOptions)
 
 	case deleteCmd.FullCommand():
 		ExecuteDelete(logger, deleteOptions)
@@ -39,5 +51,4 @@ func main() {
 		kingpin.Usage()
 		os.Exit(1)
 	}
-
 }
