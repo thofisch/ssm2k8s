@@ -141,10 +141,9 @@ func getApplicationSecrets(parameters []parameter) domain.ApplicationSecrets {
 	applications := mapApplications(parameters)
 
 	for appName, appParameters := range applications {
-		fmt.Printf("%s\n", appName)
-
 		data := mapData(appParameters)
 		secrets[appName] = domain.ApplicationSecret{
+			Path:         getPath(appParameters[0].Name),
 			LastModified: util.FindNewest(getDates(appParameters)),
 			Hash:         util.HashKeyValuePairs(getKeyValuePairs(appParameters)),
 			Data:         data,
@@ -167,6 +166,10 @@ func mapApplications(parameters []parameter) map[string][]parameter {
 
 func getSecretName(pn parameterName) string {
 	return strings.Join(append([]string{pn.Application}, pn.Paths...), "-")
+}
+
+func getPath(pn parameterName) string {
+	return fmt.Sprintf("/%s", strings.Join(append([]string{pn.Application}, pn.Paths...), "/"))
 }
 
 func mapData(parameters []parameter) domain.SecretData {

@@ -37,6 +37,7 @@ func TestParameterStore_GetApplicationSecrets(t *testing.T) {
 	assert.Ok(t, err)
 	assert.Equal(t, domain.ApplicationSecrets{
 		"app-foo-bar": domain.ApplicationSecret{
+			Path:         "/app/foo/bar	",
 			LastModified: last,
 			Hash:         util.HashKeyValuePairs(map[string]string{"key1": "secret", "key2": "value"}),
 			Data:         map[string]string{"key1": "secret", "key2": "value"},

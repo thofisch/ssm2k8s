@@ -8,6 +8,7 @@ import (
 
 type (
 	ApplicationSecret struct {
+		Path         string
 		LastModified time.Time
 		Hash         string
 		Data         SecretData
