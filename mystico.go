@@ -31,7 +31,7 @@ func NewSync(logger logging.Logger, secretStore k8s.SecretStore, parameterStore 
 
 func (s *syncImpl) SyncSecrets() {
 	// aws
-	awsSecrets, err := s.ParameterStore.GetApplicationSecrets()
+	awsSecrets, err := s.ParameterStore.GetApplicationSecrets("")
 	if err != nil {
 		return
 	}

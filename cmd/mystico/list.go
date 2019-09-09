@@ -21,7 +21,7 @@ type ListCommandOptions struct {
 func NewListCommand(cmd *kingpin.CmdClause) *ListCommandOptions {
 	opt := &ListCommandOptions{}
 
-	//cmd.Arg("application", "Name of application.").HintAction(applicationHint).StringVar(&opt.Application)
+	cmd.Arg("application", "Name of application.")/*.HintAction(applicationHint)*/.StringVar(&opt.Application)
 
 	cmd.Flag("verbose", "Print keys and values").Short('v').BoolVar(&opt.Verbose)
 	cmd.Flag("decode", "Print decoded values").Short('d').BoolVar(&opt.Decode)
@@ -39,7 +39,7 @@ func ExecuteList(logger logging.Logger, opt *ListCommandOptions) {
 		panic(err)
 	}
 
-	secrets, err := parameterStore.GetApplicationSecrets()
+	secrets, err := parameterStore.GetApplicationSecrets(opt.Application)
 	if err != nil {
 		panic(err)
 	}

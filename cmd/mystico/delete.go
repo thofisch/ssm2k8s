@@ -41,7 +41,7 @@ func ExecuteDelete(logger logging.Logger, options *DeleteCommandOptions) {
 			panic(fmt.Errorf("requires the force flags when deleting all"))
 		}
 
-		secrets, err := parameterStore.GetApplicationSecrets()
+		secrets, err := parameterStore.GetApplicationSecrets(options.Application)
 		if err != nil {
 			panic(err)
 		}

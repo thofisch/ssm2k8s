@@ -15,7 +15,7 @@ import (
 
 type (
 	ParameterStore interface {
-		GetApplicationSecrets() (secrets domain.ApplicationSecrets, err error)
+		GetApplicationSecrets(path string) (secrets domain.ApplicationSecrets, err error)
 		PutApplicationSecret(application string, key string, value string, overwrite bool) error
 		DeleteApplicationSecret(application string, key string) error
 	}
@@ -51,10 +51,12 @@ func NewParameterStoreWithClient(logger logging.Logger, client SsmClient) Parame
 	}
 }
 
-func (ps *parameterStore) GetApplicationSecrets() (secrets domain.ApplicationSecrets, err error) {
+func (ps *parameterStore) GetApplicationSecrets(path string) (secrets domain.ApplicationSecrets, err error) {
 	ps.Log.Info("Getting AWS SSM Parameters")
 
-	ssmParameters, err := ps.Client.GetParametersByPath("/")
+	path = strings.TrimLeft(path, "/")
+
+	ssmParameters, err := ps.Client.GetParametersByPath("/" + path)
 	if err != nil {
 		ps.Log.Errorf("[ERROR] %s\n", err)
 		return nil, err

@@ -32,7 +32,7 @@ func TestParameterStore_GetApplicationSecrets(t *testing.T) {
 		},
 	))
 
-	parameters, err := sut.GetApplicationSecrets()
+	parameters, err := sut.GetApplicationSecrets("")
 
 	assert.Ok(t, err)
 	assert.Equal(t, domain.ApplicationSecrets{
