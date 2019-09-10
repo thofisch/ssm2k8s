@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -9,6 +11,7 @@ import (
 	"github.com/thofisch/ssm2k8s/aws"
 	"github.com/thofisch/ssm2k8s/domain"
 	"github.com/thofisch/ssm2k8s/internal/logging"
+	"github.com/thofisch/ssm2k8s/internal/util"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -53,12 +56,12 @@ func ExecuteList(logger logging.Logger, opt *ListCommandOptions) {
 
 	fmt.Printf("\n")
 
-	format := NewListFormatter(secrets, opt.Verbose)
+	columnizer := util.NewColumnizer()
 
 	if opt.Verbose {
-		format("PATH", "SECRET", "VERSION", "LAST MODIFIED", "VALUE")
+		columnizer.Append("PATH", "SECRET", "VERSION", "LAST MODIFIED", "VALUE")
 	} else {
-		format("PATH", "SECRET", "KEYS", "HASH", "LAST MODIFIED")
+		columnizer.Append("PATH", "SECRET", "KEYS", "HASH", "LAST MODIFIED")
 	}
 
 	for _, secretName := range sortApplicationSecrets(secrets) {
@@ -66,21 +69,26 @@ func ExecuteList(logger logging.Logger, opt *ListCommandOptions) {
 
 		if opt.Verbose {
 			for _, key := range sortSecretData(secret.Data) {
+				dataSecret := secret.Data[key]
+				path := secret.Path + "/" + key
+				version := strconv.FormatInt(dataSecret.Version, 10)
+				lastModified := dataSecret.LastModified.Format(time.RFC3339)
+				value:= dataSecret.Value
 
-				var value string
-
-				if opt.Decode {
-					value = secret.Data[key]
-				} else {
+				if !opt.Decode {
 					value = "***"
 				}
 
-				format(secret.Path+"/"+key, secretName, "1", secret.LastModified.Format(time.RFC3339), value)
+				columnizer.Append(path, secretName, version, lastModified, value)
 			}
 		} else {
-			format(secret.Path, secretName, strconv.Itoa(len(secret.Data)), secret.Hash[0:7], secret.LastModified.Format(time.RFC3339))
+			columnizer.Append(secret.Path, secretName, strconv.Itoa(len(secret.Data)), secret.Hash[0:7], secret.LastModified.Format(time.RFC3339))
 		}
 	}
+
+	writer := bufio.NewWriter(os.Stdout)
+	columnizer.Print(writer)
+	defer writer.Flush()
 }
 
 func sortApplicationSecrets(secrets domain.ApplicationSecrets) []string {

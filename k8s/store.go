@@ -1,16 +1,16 @@
 package k8s
 
 import (
-	"github.com/thofisch/ssm2k8s/internal/logging"
 	"io"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/client-go/kubernetes/scheme"
 	"time"
 
 	"github.com/thofisch/ssm2k8s/domain"
 	"github.com/thofisch/ssm2k8s/internal/config"
+	"github.com/thofisch/ssm2k8s/internal/logging"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 const (
@@ -61,7 +61,7 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 	for _, s := range k8sSecrets {
 		secretName := s.GetName()
 		Annotations := s.GetAnnotations()
-		Data := getKeyValueMap(s.Data)
+		Data := getSecretData(s.Data)
 
 		lastModified, _ := time.Parse(time.RFC3339, Annotations[AnnotationLastModified])
 		secrets[secretName] = domain.ApplicationSecret{
@@ -74,11 +74,15 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 	return secrets, nil
 }
 
-func getKeyValueMap(bytes map[string][]byte) map[string]string {
-	result := make(map[string]string)
+func getSecretData(bytes map[string][]byte) domain.SecretData {
+	result := make(domain.SecretData)
 
 	for k, v := range bytes {
-		result[k] = string(v)
+		result[k] = domain.DataSecret{
+			Value:        string(v),
+			Version:      0,
+			LastModified: time.Time{},
+		}
 	}
 
 	return result
@@ -109,10 +113,22 @@ func (ss *secretStore) createSecret(secret domain.ApplicationSecret, secretName 
 				AnnotationLastModified: secret.LastModified.Format(time.RFC3339),
 				AnnotationHash:         secret.Hash},
 		},
-		StringData: secret.Data,
+		StringData: getStringData(secret.Data),
 		Type:       "Opaque",
 	}
 	return s
+}
+
+
+
+func getStringData(secretData domain.SecretData) map[string]string {
+	result := make(map[string]string)
+
+	for k, v := range secretData {
+		result[k] = v.Value
+	}
+
+	return result
 }
 
 func printSecret(secret *coreV1.Secret, w io.Writer) error {

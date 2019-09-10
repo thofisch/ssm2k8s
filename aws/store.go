@@ -178,7 +178,11 @@ func mapData(parameters []parameter) domain.SecretData {
 	secretData := make(domain.SecretData)
 
 	for _, p := range parameters {
-		secretData[p.Name.Key] = p.Value
+		secretData[p.Name.Key] = domain.DataSecret{
+			Version:      p.Version,
+			Value:        p.Value,
+			LastModified: p.LastModified,
+		}
 	}
 
 	return secretData
