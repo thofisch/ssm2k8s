@@ -1,9 +1,12 @@
 package k8s
 
 import (
+	"fmt"
 	"io"
+	"strings"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/thofisch/ssm2k8s/domain"
 	"github.com/thofisch/ssm2k8s/internal/config"
 	"github.com/thofisch/ssm2k8s/internal/logging"
@@ -60,6 +63,14 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 
 	for _, s := range k8sSecrets {
 		secretName := s.GetName()
+		version := s.GetLabels()[LabelVersion]
+
+		_, err := semver.Make(strings.TrimPrefix("v", version))
+		if err != nil {
+			fmt.Printf("SKIPPING: %q with version %q, due to %q \n", secretName, version, err)
+			continue
+		}
+
 		Annotations := s.GetAnnotations()
 		Data := getSecretData(s.Data)
 
@@ -118,8 +129,6 @@ func (ss *secretStore) createSecret(secret domain.ApplicationSecret, secretName 
 	}
 	return s
 }
-
-
 
 func getStringData(secretData domain.SecretData) map[string]string {
 	result := make(map[string]string)

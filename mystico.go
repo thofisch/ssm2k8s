@@ -47,13 +47,17 @@ func (s *syncImpl) SyncSecrets() {
 	for secretName, secret := range awsSecrets {
 		k8sSecret, ok := k8sSecrets[secretName]
 		if !ok {
-			continueOnError(s.SecretStore.CreateApplicationSecret(secret, secretName))
+			s.continueOnError(func() error {
+				return s.SecretStore.CreateApplicationSecret(secret, secretName)
+			})
 		} else {
 			if secret.Hash == k8sSecret.Hash {
 				s.Log.Debugf("Secret %q up-to-date (according to hash)", secretName)
 				continue
 			} else {
-				continueOnError(s.SecretStore.UpdateApplicationSecret(secret, secretName))
+				s.continueOnError(func() error {
+					return s.SecretStore.UpdateApplicationSecret(secret, secretName)
+				})
 			}
 		}
 	}
@@ -62,12 +66,19 @@ func (s *syncImpl) SyncSecrets() {
 		_, ok := awsSecrets[secretName]
 
 		if !ok {
-			continueOnError(s.SecretStore.DeleteApplicationSecret(secretName))
+			s.continueOnError(func() error {
+				return s.SecretStore.DeleteApplicationSecret(secretName)
+			})
 		}
 	}
 }
-func continueOnError(err error) bool {
-	return err != nil
+
+func (s *syncImpl) continueOnError(fn func() error) {
+	err := fn()
+
+	if err != nil {
+		s.Log.Error("Sync error: %s", err)
+	}
 }
 
 func (s *syncImpl) logApplicationSecrets(secrets domain.ApplicationSecrets, source string) {
