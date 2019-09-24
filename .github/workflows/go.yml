@@ -1,5 +1,11 @@
 name: Go
-on: [push]
+on:
+  push:
+    branches:
+    - master
+    tags:
+    - v*.*.*
+
 jobs:
 
   build:
@@ -18,4 +24,20 @@ jobs:
 
     - name: Build
       run: |
-        make
+        make all-build
+
+    - name: Docker
+      uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+    
+    - run: |
+        make docker
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: bin/mystico*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
