@@ -36,6 +36,9 @@ all-build: $(addprefix build-,$(subst /,-,$(ALL_PLATFORMS))) ## build all define
 build: ; $(info $(M) Building binary $(OUTBIN)) @ ## build mystico for current OS architecture
 	@CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) go build -ldflags '$(LDFLAGS)' -a -installsuffix cgo -o $(OUTBIN) ./cmd/mystico
 
+build-server-local: ; $(info $(M) Building server binary...) @ ## build server executable for local usage
+	@go build -ldflags '$(LDFLAGS)' -o $(BIN)/mysticod ./cmd/mysticod
+
 release-windows-%: EXT = .exe
 release-%:
 	@$(MAKE) release						\
@@ -87,4 +90,4 @@ version: ## prints the version (from either environment VERSION, git describe, o
 .PHONY: help
 help:
 	@grep -E '^[ a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-19s\033[0m %s\n", $$1, $$2}'
