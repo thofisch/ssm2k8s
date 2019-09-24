@@ -1,6 +1,8 @@
 name: Go
 on:
   push:
+#    branches:
+#    - master
     tags:
     - 'v*.*.*'
 
@@ -24,19 +26,22 @@ jobs:
       run: |
         make all-build
 
+    - name: Publish Binaries
+#      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: bin/mystico*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Docker Login
+#      if: startsWith(github.ref, 'refs/tags/')
       uses: azure/docker-login@v1
       with:
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_PASSWORD }}
     
     - name: Build and Push Docker
+#      if: startsWith(github.ref, 'refs/tags/')
       run: |
         make docker
-
-    - name: Publish Binaries
-      uses: softprops/action-gh-release@v1
-      with:
-        files: bin/mystico*
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
