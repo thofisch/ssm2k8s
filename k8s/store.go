@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -32,11 +31,12 @@ type (
 	}
 	secretStore struct {
 		Client Client
+		Log    logging.Logger
 	}
 )
 
-func NewSecretStore(logger logging.Logger, namespace string) (SecretStore, error) {
-	client, err := NewClient(logger, Config{
+func NewSecretStore(log logging.Logger, namespace string) (SecretStore, error) {
+	client, err := NewClient(log, Config{
 		Namespace:     namespace,
 		LabelSelector: LabelVersion,
 	})
@@ -44,11 +44,12 @@ func NewSecretStore(logger logging.Logger, namespace string) (SecretStore, error
 		return nil, err
 	}
 
-	return NewSecretStoreWithClient(client), nil
+	return NewSecretStoreWithClient(log, client), nil
 }
 
-func NewSecretStoreWithClient(client Client) SecretStore {
+func NewSecretStoreWithClient(log logging.Logger, client Client) SecretStore {
 	return &secretStore{
+		Log:    log,
 		Client: client,
 	}
 }
@@ -65,9 +66,9 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 		secretName := s.GetName()
 		version := s.GetLabels()[LabelVersion]
 
-		_, err := semver.Make(strings.TrimPrefix("v", version))
+		err := verifyVersion(version)
 		if err != nil {
-			fmt.Printf("SKIPPING: %q with version %q, due to %q \n", secretName, version, err)
+			ss.Log.Debugf("SKIPPING: %q with version %q, due to %q \n", secretName, version, err)
 			continue
 		}
 
@@ -83,6 +84,12 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 	}
 
 	return secrets, nil
+}
+
+func verifyVersion(version string) error {
+	// TODO handle semantic version strategy
+	_, err := semver.Make(strings.TrimPrefix("v", version))
+	return err
 }
 
 func getSecretData(bytes map[string][]byte) domain.SecretData {
