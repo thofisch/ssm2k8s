@@ -17,6 +17,7 @@ BIN					:= $(CURDIR)/bin
 EXECUTABLE			:= $(PACKAGE)-$(OS)-$(ARCH)$(EXT)
 OUTBIN				:= $(BIN)/$(EXECUTABLE)
 M					= $(shell printf "\033[34;1m▶\033[0m")
+GITHUB_TOKEN		?= $(shell git config --global github.token)
 
 export GO111MODULE=on
 
@@ -50,20 +51,20 @@ release-%:
 all-release: $(addprefix release-,$(subst /,-,$(ALL_PLATFORMS))) ## publish all defined OS architecture release artifacts
 
 release: ; $(info $(M) Uploading binary $(OUTBIN)) @ ## publish release artifact for current OS architecture
-	@github-release -v upload									\
-		--security-token $$(git config --global github.token)	\
-		--user $(OWNER) 										\
-		--repo $(REPO)											\
-		--tag $(VERSION)										\
-		--name $(EXECUTABLE)									\
+	@github-release -v upload				\
+		--security-token $(GITHUB_TOKEN)	\
+		--user $(OWNER) 					\
+		--repo $(REPO)						\
+		--tag $(VERSION)					\
+		--name $(EXECUTABLE)				\
 		--file $(OUTBIN)
 
 github-release-create: github-release
-	@github-release -v release									\
-		--security-token $$(git config --global github.token)	\
-		--tag $(VERSION)										\
-		--user $(OWNER) 										\
-		--repo $(REPO)											\
+	@github-release -v release				\
+		--security-token $(GITHUB_TOKEN)	\
+		--tag $(VERSION)					\
+		--user $(OWNER) 					\
+		--repo $(REPO)						\
 
 github-release:
 	GOOS=$(CURRENT_OS) GOARCH=$(CURRENT_ARCH) go get -u github.com/aktau/github-release
