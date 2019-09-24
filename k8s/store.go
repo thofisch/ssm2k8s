@@ -88,7 +88,7 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 
 func verifyVersion(version string) error {
 	// TODO handle semantic version strategy
-	_, err := semver.Make(strings.TrimPrefix("v", version))
+	_, err := semver.Parse(strings.TrimPrefix(version, "v"))
 	return err
 }
 
