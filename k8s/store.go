@@ -1,11 +1,12 @@
 package k8s
 
 import (
+	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/blang/semver"
+	"github.com/pkg/errors"
 	"github.com/thofisch/ssm2k8s/domain"
 	"github.com/thofisch/ssm2k8s/internal/config"
 	"github.com/thofisch/ssm2k8s/internal/logging"
@@ -66,7 +67,7 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 		secretName := s.GetName()
 		version := s.GetLabels()[LabelVersion]
 
-		err := verifyVersion(version)
+		err := verifyVersion(config.Version, version)
 		if err != nil {
 			ss.Log.Debugf("SKIPPING: %q with version %q, due to %q \n", secretName, version, err)
 			continue
@@ -86,10 +87,28 @@ func (ss *secretStore) GetApplicationSecrets() (domain.ApplicationSecrets, error
 	return secrets, nil
 }
 
-func verifyVersion(version string) error {
-	// TODO handle semantic version strategy
-	_, err := semver.Parse(strings.TrimPrefix(version, "v"))
-	return err
+func verifyVersion(serverVersionString string, secretVersionString string) error {
+	serverVersion, err := semver.ParseTolerant(serverVersionString)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Unexpected server version %q", serverVersionString))
+	}
+
+	secretVersion, err := semver.ParseTolerant(secretVersionString)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Unexpected secret version %q", serverVersionString))
+	}
+
+	versionRangeString := fmt.Sprintf(">=%d.%d.%d <%d.%d.%d",
+		serverVersion.Major, serverVersion.Minor, 0,
+		serverVersion.Major, serverVersion.Minor+1, 0)
+
+	versionRange := semver.MustParseRange(versionRangeString)
+
+	if 	!versionRange(secretVersion) {
+		return errors.New(fmt.Sprintf("%q was not in the %q version range", secretVersionString, versionRangeString))
+	}
+
+	return nil
 }
 
 func getSecretData(bytes map[string][]byte) domain.SecretData {
