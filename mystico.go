@@ -82,7 +82,7 @@ func (s *syncImpl) continueOnError(fn func() error) {
 }
 
 func (s *syncImpl) logApplicationSecrets(secrets domain.ApplicationSecrets, source string) {
-	s.Log.Infof("Found %d secrets in %q", len(secrets), source)
+	s.Log.Debugf("Found %d secrets in %q", len(secrets), source)
 
 	for appName, secret := range secrets {
 		keys := make([]string, 0, len(secret.Data))

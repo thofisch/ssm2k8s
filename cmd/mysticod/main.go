@@ -130,12 +130,12 @@ func printConfig(config map[string]string) {
 func (m *MainApp) run() {
 	defer m.wg.Done()
 	for {
-		m.Log.Info("Synchronizing secrets")
+		m.Log.Debug("Synchronizing secrets")
 		m.sync.SyncSecrets()
 
 		select {
 		case <-time.After(m.PollTimeout * time.Second):
-			m.Log.Infof("Done synchronizing secrets. Waiting %d seconds", m.PollTimeout)
+			m.Log.Debugf("Done synchronizing secrets. Waiting %d seconds", m.PollTimeout)
 
 		case <-m.close:
 			m.Log.Debug("Channel closed, quitting...")

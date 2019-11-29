@@ -52,7 +52,7 @@ func NewParameterStoreWithClient(logger logging.Logger, client SsmClient) Parame
 }
 
 func (ps *parameterStore) GetApplicationSecrets(path string) (secrets domain.ApplicationSecrets, err error) {
-	ps.Log.Info("Getting AWS SSM Parameters")
+	ps.Log.Debug("Getting AWS SSM Parameters")
 
 	path = strings.TrimLeft(path, "/")
 
