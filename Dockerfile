@@ -1,4 +1,4 @@
-FROM golang:1.13 as builder
+FROM golang:1.19 as builder
 LABEL maintainer="Thomas Fischer <thfis@dfds.com>"
 ARG LDFLAGS
 
